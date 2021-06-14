@@ -1,0 +1,25 @@
+{
+  "name": "apiecommerce",
+  "version": "1.0.0",
+  "description": "Server http pour API REST",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": " nodemon server/server.js",
+    "test-dev": "npm test"
+  },
+  "keywords": [
+    "server",
+    "http",
+    "rest",
+    "api"
+  ],
+  "author": "Logidoo Noirbi",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1"
+  }
+}
