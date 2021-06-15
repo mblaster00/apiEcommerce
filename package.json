@@ -2,7 +2,7 @@
   "name": "apiecommerce",
   "version": "1.0.0",
   "description": "Server http pour API REST",
-  "main": "server.js",
+  "main": "server/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": " nodemon server/server.js",
@@ -19,16 +19,22 @@
   "dependencies": {
     "bcrypt": "^5.0.1",
     "body-parser": "^1.19.0",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
+    "ejs": "^3.1.6",
     "express": "^4.17.1",
     "fs": "^0.0.1-security",
     "helmet": "^4.6.0",
     "http": "^0.0.1-security",
     "jsonwebtoken": "^8.5.1",
+    "lodash": "^4.17.21",
     "moment-timezone": "^0.5.33",
     "mongoose": "^5.12.13",
     "path": "^0.12.7",
     "pino": "^6.11.3",
+    "pino-pretty": "^5.0.2",
     "socket.io": "^4.1.2"
   }
 }

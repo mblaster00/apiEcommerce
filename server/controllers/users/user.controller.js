@@ -1,10 +1,9 @@
 // Imports
 var User = require("../../models/users/user.model");
 var bcrypt = require("bcrypt");
-var jwt = require("jsonwebtoken");
 var logger = require("../../components/logger/index");
 var moment = require("moment-timezone");
-var fs = require("fs");
+var jwtUtils = require("../../config/utils/jwt.utils")
 
 // hash the password the the user enter
 async function hashPassword(password) {
@@ -36,21 +35,12 @@ exports.signup = async (req, res, next) => {
         req.body.password = hashedPassword;
         var createdAt = moment.tz(Date.now(), config.timezone.zone);
         var newUser = new User(req.body);
-        const signOptions = {
-            algorithm: process.env.ALG,
-        };
-        var privateKey = fs.readFileSync(process.env.PRIVATE_KEY, "utf-8");
-        const accessToken = jwt.sign(
-            { userId: newUser._id, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 2 }, //expire in 2 hour
-            privateKey,
-            signOptions
-        );
+        const accessToken = jwtUtils.generateToken(newUser);
         newUser.created_at = createdAt;
         newUser.updated_at = createdAt; // the creation date and the updated date are the same on user sign up
         newUser.accessToken = accessToken;
         logger.info(`-- USER.SIGNUP -- saved`);
-        return await newUser
-            .save()
+        return await newUser.save()
             .then((user) => {
                 logger.info("-- USER.SIGNUP --" + `new user saved : ${user._id}`);
                 return res.status(201).json({
@@ -80,21 +70,11 @@ exports.login = async (req, res, next) => {
         });
         if (!user)
             return res.status(409).json({ message: "Email or phoneNumber does not exist" });
-        if (user.status === 'ISINACTIVATED')
+        if (user.active === false)
             return res.status(403).json({ message: 'Account is blocked' });
-        if (user.status === 'DELETED')
-            return res.status(403).json({ message: 'Account is deleted' });
         const validPassword = await validatePassword(password, user.password);
-        if (!validPassword) return res.status(409).json({ message: "Login or password is not correct" });
-        const signOptions = {
-            algorithm: process.env.ALG,
-        };
-        var privateKey = fs.readFileSync(process.env.PRIVATE_KEY, "utf-8");
-        const accessToken = jwt.sign(
-            { userId: user._id, exp: Math.floor(Date.now() / 1000) + 260 * 60 * 2 }, //expire in 2 hour
-            privateKey,
-            signOptions
-        );
+        if (!validPassword) return res.status(403).json({ message: "Password is not correct" });
+        const accessToken = jwtUtils.generateToken(user);
         logger.info(`-- USER.LOGIN -- saved`);
         const lastLogin = moment.tz(Date.now(), config.timezone.zone);
         return await User.findByIdAndUpdate(user._id, { accessToken, lastLogin })
