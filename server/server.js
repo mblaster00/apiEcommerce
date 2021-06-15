@@ -101,6 +101,7 @@ app.use(async (req, res, next) => {
 
 expressConfig(app);
 //registerRoutes(app);
+app.use('/', registerRoutes)
 
 // global error handler
 //app.use(errorHandler.errorHandler)
