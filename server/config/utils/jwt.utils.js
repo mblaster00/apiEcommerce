@@ -1,8 +1,7 @@
 // Imports
 var jwt = require("jsonwebtoken");
 var fs = require("fs");
-//var privateKey = fs.readFileSync(process.env.PRIVATE_KEY, "utf-8");
-var privateKey = 'MIGeMA0GCSq'
+var privateKey = fs.readFileSync(process.env.PRIVATE_KEY, "utf-8");
 const signOptions = {
     algorithm: process.env.ALG,
 };

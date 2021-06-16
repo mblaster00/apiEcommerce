@@ -33,12 +33,6 @@ var io = exports.io = require("socket.io")(server, {
 
 io = io.listen(server);
 
-// const mongooseConnectionPromise = mongoose.connect(config.mongo.uri, config.mongo.options);
-// mongoose.connection.on('error', function(err) {
-//     console.error(`MongoDB connection error: ${err}`);
-//     process.exit(-1); // eslint-disable-line no-process-exit
-// });
-
 mongoose
     .connect(config.mongo.uri, config.mongo.options)
     .then(() => {
@@ -101,7 +95,6 @@ app.use(async (req, res, next) => {
 
 expressConfig(app);
 registerRoutes(app);
-//app.use('/', registerRoutes)
 
 // global error handler
 //app.use(errorHandler.errorHandler)

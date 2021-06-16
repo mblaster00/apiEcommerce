@@ -5,19 +5,17 @@ const Schema = mongoose.Schema;
 const QuotationSchema = new Schema({
     accessToken: {
         type: String,
+        required: true
     },
     pickupLocationState: {
-        type: String,
-        lowercase: true
+        type: String
     },
     pickupLocationCountry: {
         type: String,
-        lowercase: true,
         required: true
     },
     pickupLocationAddress: {
         type: String,
-        lowercase: true,
         required: true
     },
     pickupLocationCity: {
