@@ -15,6 +15,7 @@ const compression = require("compression");
 const config = require(`./config/environments/${process.env.NODE_ENV}.js`);
 const fs = require("fs");
 const cors = require('cors');
+const errorHandler = require('./_helper/error-handler');
 
 const PORT = config.port || 9000;
 
@@ -97,7 +98,7 @@ expressConfig(app);
 registerRoutes(app);
 
 // global error handler
-//app.use(errorHandler.errorHandler)
+app.use(errorHandler)
 
 app.use((error, req, res, next) => {
     if (!error.statusCode) error.statusCode = 500;
