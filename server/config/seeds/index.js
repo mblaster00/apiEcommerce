@@ -5,6 +5,6 @@ var controllerPricing = require('./pricing');
 
 var router = express.Router();
 
-router.get('/createPricing', controllerPricing.CreatePricing);
+router.get('/createPricing', controllerPricing.createPricing);
 
 module.exports = router;

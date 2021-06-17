@@ -3,6 +3,8 @@ var authorization = require('./_helper/authorize')
 
 module.exports = (app) => {
     app.use('/api/users', authorization.authorize, require('./controllers/users'));
+    //app.use('/api/quotations', authorization.authorize, require('./controllers/quotations'));
+    app.use('/api/seeds', require('./config/seeds'));
 
     // // All undefined asset or api routes should return a 404
     // app.route('/:url(api|auth|components|app|bower_components|assets)/*')

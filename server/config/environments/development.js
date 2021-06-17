@@ -3,9 +3,6 @@
 
 // Development specific configuration
 // ==================================
-const path = require('path');
-var dotenv = require('dotenv');
-dotenv.config({ path: '/opt/logidoo.env' })
 
 module.exports = {
 
