@@ -20,7 +20,8 @@ const ItemSchema = new Schema({
     type: Number,
     required: true,
   },
-  size: []
+  size: [],
+  created_at: Date
 });
 
 const Item = mongoose.model("Item", ItemSchema);

@@ -1,34 +1,56 @@
 // Imports
 var Quotation = require("../../models/quotations/quotation.model");
+var Item = require("../../models/items/item.model");
+var Pricing = require("../../models/pricing/pricing.model");
 var logger = require("../../components/logger/index");
-var moment = require("moment-timezone");
-var jwtUtils = require("../../config/utils/jwt.utils")
 
-// verify if it's the right password
-// async function validatePassword(plainPassword, hashedPassword) {
-//     return await bcrypt.compare(plainPassword, hashedPassword);
-// }
-
-// authentification
+// create Quotation
 exports.request = async (req, res, next) => {
     logger.info(`-- REQUEST.QUOTE -- start function --`);
     try {
-        const quotation = new Quotation(req.body)
-        const user = await User.findOne({
-            $or: [{ phone: username }, { email: username }],
-        });
-        const validPassword = await validatePassword(password, user.password);
-        if (!validPassword) return res.status(403).json({ message: "Password is not correct" });
-
-        logger.info(`-- REQUEST.QUOTE -- saved`);
-        const lastLogin = moment.tz(Date.now(), config.timezone.zone);
-        return await quotation.save()
-            .then((response) => {
-                logger.info("-- NEW.QUOTATION --" + `new user saved : ${user._id}`);
-                return res.status(201).json({
-                    data: { _id: response._id },
-                    accessToken: response.accessToken,
+        let lenght = req.body.items.lenght;
+        let totalWeight = 0;
+        let totalPrice = 0;
+        let itemArray = [];
+        logger.info(`-- ITEM.CREATION-- start function`);
+        try {
+            for (var i = 0; i < lenght; i++) {
+                let item = new Item(req.body.items[i]);
+                item.created_at = new Date()
+                totalWeight += item.weight;
+                totalPrice += item.price;
+                await item.save(function(err, savedItem) {
+                    if (err) console.log(err);
+                    else{ itemArray.push(savedItem._id) }
                 });
+            }
+        } catch (error) {
+            logger.info(`-- ITEM.ERROR-- : ${error.toString()}`);
+        }
+        let newQuotation = {
+            pickupLocationState: req.body.pickupLocationState,
+            pickupLocationCountry: req.body.pickupLocationCountry,
+            pickupLocationAddress: req.body.pickupLocationAddress,
+            pickupLocationCity: req.body.pickupLocationCity,
+            dropoffLocationState: req.body.dropoffLocationState,
+            dropoffLocationCountry: req.body.dropoffLocationCountry,
+            dropoffLocationAddress: req.body.dropoffLocationAddress,
+            dropoffLocationCity: req.body.dropoffLocationCity,
+            items: itemArray,
+            itemsCurrencyCode: req.body.itemsCurrencyCode,
+            created_at: new Date()
+        };
+        const quotation = new Quotation(newQuotation);
+        logger.info(`-- REQUEST.QUOTE -- saved`);
+        let response = { totalItemsWeight: totalWeight, totalItemsPrice: totalPrice, shipmentPrice: null, shipmentCurrencyCode: "USD"}
+        await Pricing.find({pickupLocationCountry: newQuotation.pickupLocationCountry,
+            dropoffLocationCountry: newQuotation.dropoffLocationCountry}).then(res => {
+                response.shipmentPrice = res.pricePerKilogram * totalWeight
+        });
+        return await quotation.save()
+            .then((res) => {
+                logger.info("-- NEW.QUOTATION --" + `new quotation saved : ${user._id}`);
+                return res.status(201).json({ data: response });
             })
             .catch((error) => {
                 logger.info(

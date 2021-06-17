@@ -3,9 +3,6 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const UserSchema = new Schema({
-    accessToken: {
-        type: String,
-    },
     quoteId: {
         type: mongoose.Schema.ObjectId,
         ref: 'Quotation',

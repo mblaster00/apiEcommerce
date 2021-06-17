@@ -3,10 +3,6 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const QuotationSchema = new Schema({
-    accessToken: {
-        type: String,
-        required: true
-    },
     pickupLocationState: {
         type: String
     },

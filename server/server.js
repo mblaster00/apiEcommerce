@@ -5,17 +5,12 @@ var dotenv = require('dotenv');
 dotenv.config({ path: '/opt/ecommerce.env' })
 
 const mongoose = require("mongoose");
-const jwt = require("jsonwebtoken");
-const path = require("path");
-const User = require("./models/users/user.model");
 const expressConfig = require("./config/express");
 const registerRoutes = require('./routes');
 const compression = require("compression");
 const config = require(`./config/environments/${process.env.NODE_ENV}.js`);
-const fs = require("fs");
 const cors = require('cors');
 const errorHandler = require('./_helper/error-handler');
-
 const PORT = config.port || 9000;
 
 // Instatiate server
@@ -50,63 +45,11 @@ app.use(express.json()); //Used to parse JSON bodies
 app.use(express.urlencoded({ extended: true })); //Parse URL-encoded bodies
 app.use(cors())
 
-app.use(async (req, res, next) => {
-    let verifytoken = {
-        // if has error in token or expire
-        userId: null,
-        exp: null,
-    };
-    if (req.headers["x-access-token"]) {
-        const accessToken = req.headers["x-access-token"];
-        const verifyOptions = {
-            algorithms: [process.env.ALG],
-        };
-        var publicKey = fs.readFileSync(process.env.PUBLIC_KEY, "utf-8");
-        const { userId, exp } = await jwt.verify(
-            accessToken,
-            publicKey,
-            verifyOptions,
-            (err, decode) => {
-                if (err) {
-                    return verifytoken;
-                } else {
-                    // success token
-                    return {
-                        userId: decode.userId,
-                        exp: decode.exp,
-                    };
-                }
-            }
-        );
-        // Check if token has expired
-        if (exp < Date.now().valueOf() / 1000 || exp == null) {
-            return res
-                .status(401)
-                .json({
-                    error: "JWT token has expired, please login to obtain a new one",
-                });
-        }
-        res.locals.loggedInUser = await User.findById(userId);
-        next();
-    } else {
-        next();
-    }
-});
-
 expressConfig(app);
 registerRoutes(app);
 
 // global error handler
 //app.use(errorHandler)
-
-app.use((error, req, res, next) => {
-    if (!error.statusCode) error.statusCode = 500;
-
-    if (error.statusCode === 301) {
-        //return res.status(301).redirect("/not-found");
-    }
-    return res.status(error.statusCode).json({ message: error.toString() });
-});
 
 // Launch server
 app.listen(PORT, () => {

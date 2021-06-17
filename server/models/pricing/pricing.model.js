@@ -11,7 +11,7 @@ const PricingSchema = new Schema({
         type: String,
         required: true
     },
-    pricePerKiilogram: {
+    pricePerKilogram: {
         type: Number,
         required: true
     },
