@@ -98,7 +98,7 @@ expressConfig(app);
 registerRoutes(app);
 
 // global error handler
-app.use(errorHandler)
+//app.use(errorHandler)
 
 app.use((error, req, res, next) => {
     if (!error.statusCode) error.statusCode = 500;
