@@ -2,7 +2,7 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const UserSchema = new Schema({
+const DeliverySchema = new Schema({
     quoteId: {
         type: mongoose.Schema.ObjectId,
         ref: 'Quotation',
@@ -23,10 +23,6 @@ const UserSchema = new Schema({
     pickupcontactEmail: {
         type: String,
         required: true
-    },
-    active: {
-        type: Boolean,
-        default: false,
     },
     created_at: Date,
     updated_at: Date
