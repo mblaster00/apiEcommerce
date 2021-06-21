@@ -3,6 +3,7 @@ var Quotation = require("../../models/quotations/quotation.model");
 var Item = require("../../models/items/item.model");
 var Pricing = require("../../models/pricing/pricing.model");
 var logger = require("../../components/logger/index");
+const errorHandler = require('../../_helper/error-handler');
 
 // create Quotation
 exports.request = async (req, res, next) => {
@@ -13,20 +14,21 @@ exports.request = async (req, res, next) => {
         let totalPrice = 0;
         let itemArray = [];
         logger.info(`-- ITEM.CREATION-- start function`);
-        try {
-            for (var i = 0; i < lenght; i++) {
-                let item = new Item(req.body.items[i]);
-                item.created_at = new Date()
-                totalWeight += item.weight;
-                totalPrice += item.price;
-                await item.save(function(err, savedItem) {
-                    if (err) console.log(err);
-                    else{ itemArray.push(savedItem._id) }
-                });
-            }
-        } catch (error) {
-            logger.info(`-- ITEM.ERROR-- : ${error.toString()}`);
-        }
+        // try {
+        //     console.log('List items======>', req.body.items)
+        //     for (var i = 0; i < lenght; i++) {
+        //         let item = new Item(req.body.items[i]);
+        //         item.created_at = new Date()
+        //         totalWeight += item.weight;
+        //         totalPrice += item.price;
+        //         await item.save(function(err, savedItem) {
+        //             if (err) console.log(err);
+        //             else{ itemArray.push(savedItem._id) }
+        //         });
+        //     }
+        // } catch (error) {
+        //     logger.info(`-- ITEM.ERROR-- : ${error.toString()}`);
+        // }
         let newQuotation = {
             pickupLocationState: req.body.pickupLocationState,
             pickupLocationCountry: req.body.pickupLocationCountry,
@@ -36,7 +38,8 @@ exports.request = async (req, res, next) => {
             dropoffLocationCountry: req.body.dropoffLocationCountry,
             dropoffLocationAddress: req.body.dropoffLocationAddress,
             dropoffLocationCity: req.body.dropoffLocationCity,
-            items: itemArray,
+            //items: itemArray,
+            items: req.body.items,
             itemsCurrencyCode: req.body.itemsCurrencyCode,
             created_at: new Date()
         };
@@ -48,8 +51,8 @@ exports.request = async (req, res, next) => {
                 response.shipmentPrice = res.pricePerKilogram * totalWeight
         });
         return await quotation.save()
-            .then((res) => {
-                logger.info("-- NEW.QUOTATION --" + `new quotation saved : ${user._id}`);
+            .then(() => {
+                logger.info("-- NEW.QUOTATION --" + `new quotation saved : ${quotation._id}`);
                 return res.status(201).json({ data: response });
             })
             .catch((error) => {

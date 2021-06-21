@@ -1,9 +1,10 @@
 // Imports
 var User = require("../../models/users/user.model");
 var bcrypt = require("bcrypt");
-var jwtUtils = require("../../config/utils/jwt.utils")
+var jwtUtils = require("../../config/utils/jwt.utils");
 var config = require("../../config/environments/index");
 var logger = require("../../components/logger/index");
+const errorHandler = require('../../_helper/error-handler');
 var moment = require("moment-timezone");
 
 // hash the password the the user enter

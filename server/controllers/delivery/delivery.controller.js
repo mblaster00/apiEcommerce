@@ -1,6 +1,7 @@
 // Imports
 var Delivery = require("../../models/delivery/delivery.model");
 var logger = require("../../components/logger/index");
+const errorHandler = require('../../_helper/error-handler');
 
 // create Delivery
 exports.request = async (req, res, next) => {
@@ -31,7 +32,7 @@ exports.getDelivery = async (req, res, next) => {
     try {
         logger.info(`-- REQUEST.QUOTE -- saved`);
         let response = { shippingNumber: null, status: null, createdAt: new Date()}
-        return await Delivery.create(req.body)
+        return await Delivery.find(req.body)
             .then(() => {
                 logger.info("-- NEW.DELIVERY --" + `new delivery saved : ${user._id}`);
                 return res.status(201).json({ data: response });
@@ -54,7 +55,7 @@ exports.cancelDelivery = async (req, res, next) => {
     try {
         logger.info(`-- REQUEST.QUOTE -- saved`);
         let response = { shippingNumber: null, status: null, createdAt: new Date()}
-        return await Delivery.create(req.body)
+        return await Delivery.deleteOne(req.body)
             .then(() => {
                 logger.info("-- NEW.DELIVERY --" + `new delivery saved : ${user._id}`);
                 return res.status(201).json({ data: response });

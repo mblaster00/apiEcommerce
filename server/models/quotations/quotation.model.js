@@ -29,14 +29,14 @@ const QuotationSchema = new Schema({
         required: true
     },
     dropoffLocationCity: {
-        type: String,
-        lowercase: true
+        type: String
     },
-    items: {
-        type: mongoose.Schema.ObjectId,
-        ref: 'Item',
-        required: true
-    },
+    items: [{ label: String, quantity: Number, price: Number, weight: Number, size: [] }],
+    // items: [{
+    //     type: mongoose.Schema.ObjectId,
+    //     ref: 'Item',
+    //     required: true
+    // }],
     itemsCurrencyCode: {
         type: String,
         required: true

@@ -10,7 +10,6 @@ const registerRoutes = require('./routes');
 const compression = require("compression");
 const config = require(`./config/environments/${process.env.NODE_ENV}.js`);
 const cors = require('cors');
-const errorHandler = require('./_helper/error-handler');
 const PORT = config.port || 9000;
 
 // Instatiate server

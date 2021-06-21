@@ -1,5 +1,5 @@
 // Imports
-var authorization = require('./_helper/authorize')
+
 
 module.exports = (app) => {
     app.use('/api/users', require('./controllers/users'));
