@@ -31,7 +31,7 @@ exports.getDelivery = async (req, res, next) => {
     logger.info(`-- REQUEST.QUOTE -- start function --`);
     try {
         logger.info(`-- REQUEST.QUOTE -- saved`);
-        return await Delivery.findById(req.params.id, '-password').exec()
+        return await Delivery.findById(req.params.id).exec()
             .then((delivery) => {
                 logger.info("-- GET.DELIVERY --" + `id delivery : ${delivery._id}`);
                 return res.status(201).json({ data: delivery });
