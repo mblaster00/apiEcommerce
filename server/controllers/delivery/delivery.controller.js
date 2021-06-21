@@ -31,11 +31,10 @@ exports.getDelivery = async (req, res, next) => {
     logger.info(`-- REQUEST.QUOTE -- start function --`);
     try {
         logger.info(`-- REQUEST.QUOTE -- saved`);
-        let response = { shippingNumber: null, status: null, createdAt: new Date()}
-        return await Delivery.find(req.body)
-            .then(() => {
-                logger.info("-- NEW.DELIVERY --" + `new delivery saved : ${user._id}`);
-                return res.status(201).json({ data: response });
+        return await Delivery.findById(req.params.id, '-password').exec()
+            .then((delivery) => {
+                logger.info("-- GET.DELIVERY --" + `id delivery : ${delivery._id}`);
+                return res.status(201).json({ data: delivery });
             })
             .catch((error) => {
                 logger.info(
@@ -49,15 +48,16 @@ exports.getDelivery = async (req, res, next) => {
     }
 };
 
+
 // calcelDelivery
 exports.cancelDelivery = async (req, res, next) => {
     logger.info(`-- REQUEST.QUOTE -- start function --`);
     try {
         logger.info(`-- REQUEST.QUOTE -- saved`);
         let response = { shippingNumber: null, status: null, createdAt: new Date()}
-        return await Delivery.deleteOne(req.body)
+        return await Delivery.findByIdAndRemove(req.params.id).exec()
             .then(() => {
-                logger.info("-- NEW.DELIVERY --" + `new delivery saved : ${user._id}`);
+                logger.info("-- DELETE.DELIVERY --" + `delivery successfully deleted`);
                 return res.status(201).json({ data: response });
             })
             .catch((error) => {
