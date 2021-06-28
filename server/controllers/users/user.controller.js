@@ -1,11 +1,13 @@
 // Imports
 var User = require("../../models/users/user.model");
+var ApiKey = require("../../models/apiKey/apiKey.model");
 var bcrypt = require("bcrypt");
 var jwtUtils = require("../../config/utils/jwt.utils");
 var config = require("../../config/environments/index");
 var logger = require("../../components/logger/index");
 const errorHandler = require('../../_helper/error-handler');
 var moment = require("moment-timezone");
+const { v4: uuidv4 } = require('uuid');
 
 // hash the password the the user enter
 async function hashPassword(password) {
@@ -42,12 +44,19 @@ exports.signup = async (req, res, next) => {
         newUser.updated_at = createdAt; // the creation date and the updated date are the same on user sign up
         newUser.accessToken = accessToken;
         logger.info(`-- USER.SIGNUP -- saved`);
+        keyData = { userId: newUser._id, created_at: createdAt, updated_at: createdAt }
+        var apiKey = new ApiKey(keyData);
         return await newUser.save()
             .then((user) => {
                 logger.info("-- USER.SIGNUP --" + `new user saved : ${user._id}`);
+                const secret = uuidv4();
+                const secretToken = `${jwtUtils.generateSecret(apiKey)}|${secret}`;
+                apiKey.secretToken = secretToken;
+                apiKey.save()
                 return res.status(201).json({
                     data: { _id: user._id },
                     accessToken: user.accessToken,
+                    secretToken: secretToken,
                 });
             })
             .catch((error) => {
@@ -79,7 +88,14 @@ exports.login = async (req, res, next) => {
         const accessToken = jwtUtils.generateToken(user);
         logger.info(`-- USER.LOGIN -- saved`);
         const lastLogin = moment.tz(Date.now(), config.timezone.zone);
-        return await User.findByIdAndUpdate(user._id, { accessToken, lastLogin })
+        if ((lastLogin - user.lastLogin) / (1000 * 3600 * 24 * 365) > 1) { // More than one year without updated apiKey
+            logger.info(`-- USER.APIKEY -- update`);
+            const apiKey = await ApiKey.findOne({ userId: user._id }).exec();
+            const secret = uuidv4();
+            const secretToken = `${jwtUtils.generateSecret(apiKey)}|${secret}` 
+            await ApiKey.findOneAndUpdate({ userId: user._id }, { accessToken: secretToken }).exec()
+        }
+        return await User.findByIdAndUpdate(user._id, { accessToken: accessToken, lastLogin: lastLogin })
             .exec()
             .then((result) => {
                 logger.info(`-- USER.LOGIN -- SUCCESSFULLY`);

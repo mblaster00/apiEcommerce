@@ -1,4 +1,4 @@
-// server/models/user.model.js
+// server/models/delivery.model.js
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 

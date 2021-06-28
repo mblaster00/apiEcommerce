@@ -47,9 +47,6 @@ app.use(cors())
 expressConfig(app);
 registerRoutes(app);
 
-// global error handler
-//app.use(errorHandler)
-
 // Launch server
 app.listen(PORT, () => {
     console.log("Server is listening on Port:", PORT);

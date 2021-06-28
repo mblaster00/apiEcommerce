@@ -10,7 +10,14 @@ const signOptions = {
 module.exports = {
     generateToken: function (user) {
         return jwt.sign(
-            { userId: user._id, exp: Math.floor(Date.now() / 1000) + 260 * 60 * 2 }, //expire in 2 hour
+            { userId: user._id, exp: Math.floor(Date.now() / 1000) + 260 * 60 * 1 }, //expire in 1 hour
+            privateKey,
+            signOptions
+        );
+    },
+    generateSecret: function (apiKey) {
+        return jwt.sign(
+            { keyId: apiKey._id, exp: Math.floor(Date.now() / 1000) + 260 * 60 * 24 * 365 }, //expire in 1 year
             privateKey,
             signOptions
         );

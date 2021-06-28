@@ -9,26 +9,20 @@ const errorHandler = require('../../_helper/error-handler');
 exports.request = async (req, res, next) => {
     logger.info(`-- REQUEST.QUOTE -- start function --`);
     try {
-        let lenght = req.body.items.lenght;
+        let length = req.body.items.length;
         let totalWeight = 0;
         let totalPrice = 0;
-        let itemArray = [];
         logger.info(`-- ITEM.CREATION-- start function`);
-        // try {
-        //     console.log('List items======>', req.body.items)
-        //     for (var i = 0; i < lenght; i++) {
-        //         let item = new Item(req.body.items[i]);
-        //         item.created_at = new Date()
-        //         totalWeight += item.weight;
-        //         totalPrice += item.price;
-        //         await item.save(function(err, savedItem) {
-        //             if (err) console.log(err);
-        //             else{ itemArray.push(savedItem._id) }
-        //         });
-        //     }
-        // } catch (error) {
-        //     logger.info(`-- ITEM.ERROR-- : ${error.toString()}`);
-        // }
+        try {
+            if (length > 0)
+                for (var i = 0; i < length; i++) {
+                    let item = req.body.items[i];
+                    totalWeight += item.weight;
+                    totalPrice += item.price;
+                }
+        } catch (error) {
+            logger.info(`-- ITEM.ERROR-- : ${error.toString()}`);
+        }
         let newQuotation = {
             pickupLocationState: req.body.pickupLocationState,
             pickupLocationCountry: req.body.pickupLocationCountry,
@@ -38,17 +32,17 @@ exports.request = async (req, res, next) => {
             dropoffLocationCountry: req.body.dropoffLocationCountry,
             dropoffLocationAddress: req.body.dropoffLocationAddress,
             dropoffLocationCity: req.body.dropoffLocationCity,
-            //items: itemArray,
             items: req.body.items,
             itemsCurrencyCode: req.body.itemsCurrencyCode,
             created_at: new Date()
         };
         const quotation = new Quotation(newQuotation);
         logger.info(`-- REQUEST.QUOTE -- saved`);
-        let response = { totalItemsWeight: totalWeight, totalItemsPrice: totalPrice, shipmentPrice: null, shipmentCurrencyCode: "USD"}
+        let response = { totalItemsWeight: totalWeight, totalItemsPrice: totalPrice, totalshipmentPrice: null, shipmentCurrencyCode: "USD"}
         await Pricing.find({pickupLocationCountry: newQuotation.pickupLocationCountry,
             dropoffLocationCountry: newQuotation.dropoffLocationCountry}).then(res => {
-                response.shipmentPrice = res.pricePerKilogram * totalWeight
+                shipmentPrice = res.pricePerKilogram * totalWeight 
+                response.totalshipmentPrice = shipmentPrice * 1.05 
         });
         return await quotation.save()
             .then(() => {

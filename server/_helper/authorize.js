@@ -1,11 +1,13 @@
 const jwt = require("jsonwebtoken");
 const logger = require("./../components/logger/index");
 const User = require("../models/users/user.model");
+const ApiKey = require("../models/apiKey/apiKey.model");
 const fs = require("fs");
 
 module.exports = {
-    // authorize role user
-    authorize: async function authorize(req, res, next) {
+
+    // IsLogged user 
+    IsLogged: async function IsLogged(req, res, next) {
         // roles param can be a single role string (e.g. Role.User or 'User')
         // or an array of roles (e.g. [Role.Admin, Role.User] or ['Admin', 'User'])
         let verifytoken = {
@@ -41,10 +43,58 @@ module.exports = {
                 return res
                     .status(401)
                     .json({
-                        error: "JWT token has expired, please login to obtain a new one",
+                        error: "JWT token has expired, please login again",
                     });
             }
             res.locals.loggedInUser = await User.findById(userId);
+            next();
+        } else {
+            next();
+        }
+    },
+
+
+    // authorize user 
+    authorize: async function authorize(req, res, next) {
+        // roles param can be a single role string (e.g. Role.User or 'User')
+        // or an array of roles (e.g. [Role.Admin, Role.User] or ['Admin', 'User'])
+        let verifytoken = {
+            // if has error in token or expire
+            keyId: null,
+            exp: null,
+        };
+        if (req.headers["x-secret-token"]) {
+            const secretToken = req.headers["x-secret-token"];
+            const verifyOptions = {
+                algorithms: [process.env.ALG],
+            };
+            var publicKey = fs.readFileSync(process.env.PUBLIC_KEY, "utf-8");
+            // verify a token symmetric
+            const { keyId, exp } = await jwt.decode(
+                secretToken,
+                publicKey,
+                verifyOptions,
+                (err, decode) => {
+                    if (err) {
+                        return verifytoken;
+                    } else {
+                        // success token
+                        return {
+                            keyId: decode.keyId,
+                            exp: decode.exp,
+                        };
+                    }
+                }
+            );
+            // Check if token has expired
+            if (exp < Date.now().valueOf() / 1000 || exp == null) {
+                return res
+                    .status(401)
+                    .json({
+                        error: "JWT token has expired, It has been a long time that you don't change your api key",
+                    });
+            }
+            res.locals.loggedInUser = await User.findById(keyId);
             next();
         } else {
             next();
