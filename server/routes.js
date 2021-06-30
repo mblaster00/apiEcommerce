@@ -6,6 +6,7 @@ module.exports = (app) => {
     app.use('/api/seeds', require('./config/seeds'));
     app.use('/api/quotations', require('./controllers/quotations'));
     app.use('/api/delivery', require('./controllers/delivery'));
+    app.use('/api/keys', require('./controllers/apiKey'));
 
     // // All undefined asset or api routes should return a 404
     // app.route('/:url(api|auth|components|app|bower_components|assets)/*')
