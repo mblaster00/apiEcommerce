@@ -25,6 +25,9 @@ exports.signup = async (req, res, next) => {
     try {
         const { email, phone } = req.body;
         const emailExist = await User.findOne({ email });
+        if (!email && !phone)
+            return res.status(400).json({ message: `Bad Request.` });
+        console.log(req.body)
         if (emailExist)
             return res.status(409).json({ message: `Email already exist.` });
         if (phone) {
@@ -55,8 +58,7 @@ exports.signup = async (req, res, next) => {
                 apiKey.save()
                 return res.status(201).json({
                     data: { _id: user._id },
-                    accessToken: user.accessToken,
-                    secretToken: secretToken,
+                    accessToken: user.accessToken
                 });
             })
             .catch((error) => {

@@ -3,15 +3,27 @@ var Delivery = require("../../models/delivery/delivery.model");
 var logger = require("../../components/logger/index");
 const errorHandler = require('../../_helper/error-handler');
 
+
 // create Delivery
 exports.request = async (req, res, next) => {
     logger.info(`-- REQUEST.QUOTE -- start function --`);
     try {
         logger.info(`-- REQUEST.QUOTE -- saved`);
         let response = { shippingNumber: null, status: null, createdAt: new Date()}
-        return await Delivery.create(req.body)
-            .then(() => {
-                logger.info("-- NEW.DELIVERY --" + `new delivery saved : ${user._id}`);
+        const newDelivery = {
+            quoteId: req.params.quoteId,
+            pickupContactEmail: req.body.pickupContactEmail,
+            pickupContactPhoneNumber: req.body.pickupContactPhoneNumber,
+            dropoffContactFullName: req.body.dropoffContactFullName,
+            dropoffContactEmail: req.body.dropoffContactEmail,
+            dropoffContactPhoneNumber: req.body.dropoffContactPhoneNumber,
+            created_at: new Date(),
+            updated_at: new Date()
+        };
+        const delivery = new Delivery(newDelivery);
+        return await delivery.save()
+            .then((de) => {
+                logger.info("-- NEW.DELIVERY --" + `new delivery saved : ${delivery._id}`);
                 return res.status(201).json({ data: response });
             })
             .catch((error) => {

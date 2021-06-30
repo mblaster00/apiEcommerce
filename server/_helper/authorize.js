@@ -1,7 +1,6 @@
 const jwt = require("jsonwebtoken");
 const logger = require("./../components/logger/index");
 const User = require("../models/users/user.model");
-const ApiKey = require("../models/apiKey/apiKey.model");
 const fs = require("fs");
 
 module.exports = {
@@ -63,8 +62,9 @@ module.exports = {
             keyId: null,
             exp: null,
         };
-        if (req.headers["x-secret-token"]) {
-            const secretToken = req.headers["x-secret-token"];
+        if (req.headers["secret-token"]) {
+            var secret = req.headers["secret-token"]
+            const secretToken = secret.split("|")[0];
             const verifyOptions = {
                 algorithms: [process.env.ALG],
             };
@@ -94,7 +94,6 @@ module.exports = {
                         error: "JWT token has expired, It has been a long time that you don't change your api key",
                     });
             }
-            res.locals.loggedInUser = await User.findById(keyId);
             next();
         } else {
             next();

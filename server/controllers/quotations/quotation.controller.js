@@ -38,7 +38,7 @@ exports.request = async (req, res, next) => {
         };
         const quotation = new Quotation(newQuotation);
         logger.info(`-- REQUEST.QUOTE -- saved`);
-        let response = { totalItemsWeight: totalWeight, totalItemsPrice: totalPrice, totalshipmentPrice: null, shipmentCurrencyCode: "USD"}
+        let response = { quoteId: quotation._id,totalItemsWeight: totalWeight, totalItemsPrice: totalPrice, totalshipmentPrice: null, shipmentCurrencyCode: "USD"}
         await Pricing.find({pickupLocationCountry: newQuotation.pickupLocationCountry,
             dropoffLocationCountry: newQuotation.dropoffLocationCountry}).then(res => {
                 shipmentPrice = res.pricePerKilogram * totalWeight 

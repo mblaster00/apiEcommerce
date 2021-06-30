@@ -8,21 +8,25 @@ const DeliverySchema = new Schema({
         ref: 'Quotation',
         required: true
     },
-    pickupcontactEmail: {
+    pickupContactEmail: {
         type: String,
         required: true
     },
-    pickupcontactPhoneNumber: {
+    pickupContactPhoneNumber: {
         type: String,
         required: true,
     },
-    pickupcontactFullName: {
+    dropoffContactFullName: {
         type: String,
         required: true
     },
-    pickupcontactEmail: {
+    dropoffContactEmail: {
         type: String,
         required: true
+    },
+    dropoffContactPhoneNumber: {
+        type: String,
+        required: true,
     },
     created_at: Date,
     updated_at: Date
