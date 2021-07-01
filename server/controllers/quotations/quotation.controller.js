@@ -4,6 +4,8 @@ var Item = require("../../models/items/item.model");
 var Pricing = require("../../models/pricing/pricing.model");
 var logger = require("../../components/logger/index");
 const errorHandler = require('../../_helper/error-handler');
+const axios = require('axios');
+
 
 // create Quotation
 exports.request = async (req, res, next) => {
@@ -59,4 +61,35 @@ exports.request = async (req, res, next) => {
             `-- QUOTATION.ERROR-- : ${error.toString()}`
         );
     }
+
+
+
+    /* 
+        Generate PRODUCT HSCODE
+    */
+
+    exports.getHSCODE = async (shipmentInfos, transiteoToken) => {
+
+        // request config
+        const config = {
+            method: 'post',
+            url: process.env.TRANSITEO_HSCODEFINDER_URL,
+            headers: { 'Content-type': 'application/json', Authorization: `Bearer ${transiteoToken}` },
+            data: shipmentInfos
+        };
+
+        // actual reques
+        axios(config)
+            .then(async result => {
+                if(result.data.result.hscode) {
+                    return result.data.result.hscode
+                }
+            })
+            .catch(err => {
+                console.log(err)
+            });
+    }
+
+
+
 };

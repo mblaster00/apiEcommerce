@@ -2,7 +2,7 @@
 var express = require("express");
 var bodyParser = require("body-parser");
 var dotenv = require('dotenv');
-dotenv.config({ path: '/opt/.env' })
+dotenv.config({ path: '/opt/ecommerce.env' })
 
 const mongoose = require("mongoose");
 const expressConfig = require("./config/express");
