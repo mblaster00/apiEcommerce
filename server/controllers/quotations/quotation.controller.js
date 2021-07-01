@@ -79,16 +79,46 @@ exports.request = async (req, res, next) => {
         };
 
         // actual reques
-        axios(config)
+        await axios(config)
             .then(async result => {
-                if(result.data.result.hscode) {
-                    return result.data.result.hscode
+                if(result.data) {
+                    return await result.data.result.hscode
                 }
             })
             .catch(err => {
                 console.log(err)
             });
     }
+
+
+
+    /* 
+        Calculate DUTY from HSCODEs
+    */
+
+    exports.calculeDuty = async(shipmentInfos, transiteoToken) => {
+
+        // request config
+        const config = {
+            method: 'post',
+            url: process.env.TRANSITEO_DUTYCALCULATION_URL,
+            headers: { 'Content-type': 'application/json', Authorization: `Bearer ${transiteoToken}` },
+            data: shipmentInfos
+        };
+
+        // actual request
+        await axios(config)
+            .then(async result => {
+                return await result.data;
+            })
+            .catch(err => {
+                console.log(err);
+            });
+    }
+
+
+    
+
 
 
 
