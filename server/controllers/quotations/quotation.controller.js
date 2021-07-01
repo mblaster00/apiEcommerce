@@ -4,6 +4,8 @@ var Item = require("../../models/items/item.model");
 var Pricing = require("../../models/pricing/pricing.model");
 var logger = require("../../components/logger/index");
 const errorHandler = require('../../_helper/error-handler');
+const axios = require('axios');
+
 
 
 // Tarif transiteo
@@ -11,6 +13,30 @@ function getTarif(res, product) {
     return function (err) {
         return res.status(product).json(err);
     };
+}
+
+
+/* Generate PRODUCT HSCODE */
+async function getHSCODE(shipmentInfos, transiteoToken) {
+
+    // request config
+    const config = {
+        method: 'post',
+        url: process.env.TRANSITEO_HSCODEFINDER_URL,
+        headers: { 'Content-type': 'application/json', Authorization: `Bearer ${transiteoToken}` },
+        data: shipmentInfos
+    };
+
+    // actual reques
+    axios(config)
+        .then(async result => {
+            if (result.data.result.hscode) {
+                return result.data.result.hscode
+            }
+        })
+        .catch(err => {
+            console.log(err)
+        });
 }
 
 
@@ -47,11 +73,13 @@ exports.request = async (req, res, next) => {
         };
         const quotation = new Quotation(newQuotation);
         logger.info(`-- REQUEST.QUOTE -- saved`);
-        let response = { quoteId: quotation._id,totalItemsWeight: totalWeight, totalItemsPrice: totalPrice, totalshipmentPrice: null, shipmentCurrencyCode: "USD"}
-        await Pricing.find({pickupLocationCountry: newQuotation.pickupLocationCountry,
-            dropoffLocationCountry: newQuotation.dropoffLocationCountry}).then(res => {
-                shipmentPrice = res.pricePerKilogram * totalWeight 
-                response.totalshipmentPrice = shipmentPrice * 1.05 
+        let response = { quoteId: quotation._id, totalItemsWeight: totalWeight, totalItemsPrice: totalPrice, totalshipmentPrice: null, shipmentCurrencyCode: "USD" }
+        await Pricing.find({
+            pickupLocationCountry: newQuotation.pickupLocationCountry,
+            dropoffLocationCountry: newQuotation.dropoffLocationCountry
+        }).then(res => {
+            shipmentPrice = res.pricePerKilogram * totalWeight
+            response.totalshipmentPrice = shipmentPrice * 1.05
         });
         return await quotation.save()
             .then(() => {
