@@ -5,6 +5,15 @@ var Pricing = require("../../models/pricing/pricing.model");
 var logger = require("../../components/logger/index");
 const errorHandler = require('../../_helper/error-handler');
 
+
+// Tarif transiteo
+function getTarif(res, product) {
+    return function (err) {
+        return res.status(product).json(err);
+    };
+}
+
+
 // create Quotation
 exports.request = async (req, res, next) => {
     logger.info(`-- REQUEST.QUOTE -- start function --`);
