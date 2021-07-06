@@ -7,6 +7,7 @@ dotenv.config({ path: '/opt/ecommerce.env' })
 const mongoose = require("mongoose");
 const expressConfig = require("./config/express");
 const registerRoutes = require('./routes');
+const starCron = require("./scheduler/runner");
 const compression = require("compression");
 const config = require(`./config/environments/${process.env.NODE_ENV}.js`);
 const cors = require('cors');
@@ -46,6 +47,7 @@ app.use(cors())
 
 expressConfig(app);
 registerRoutes(app);
+starCron();
 
 // Launch server
 app.listen(PORT, () => {

@@ -45,5 +45,4 @@ const QuotationSchema = new Schema({
 });
 
 const Quotation = mongoose.model("Quotation", QuotationSchema);
-
 module.exports = Quotation;
