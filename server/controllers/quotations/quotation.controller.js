@@ -5,44 +5,128 @@ var Pricing = require("../../models/pricing/pricing.model");
 var logger = require("../../components/logger/index");
 const errorHandler = require('../../_helper/error-handler');
 const axios = require('axios');
-
-
-
-// Tarif transiteo
-function getTarif(res, product) {
-    return function (err) {
-        return res.status(product).json(err);
-    };
-}
-
+const fs = require('fs');
+const transiteoToken = fs.readFileSync('./server/scheduler/authToken.JSON', "utf-8");
 
 /* Generate PRODUCT HSCODE */
-async function getHSCODE(shipmentInfos, transiteoToken) {
-
+async function getHSCODE(shipmentInfos) {
     // request config
+    logger.info(`-- HSCODE.REQUEST-- start function`);
     const config = {
         method: 'post',
         url: process.env.TRANSITEO_HSCODEFINDER_URL,
         headers: { 'Content-type': 'application/json', Authorization: `Bearer ${transiteoToken}` },
         data: shipmentInfos
     };
-
     // actual reques
-    axios(config)
-        .then(async result => {
-            if (result.data.result.hscode) {
-                return result.data.result.hscode
-            }
-        })
-        .catch(err => {
-            console.log(err)
-        });
+    try {
+        const response = await axios(config)
+        if (response) {
+            return await response.data.result.hs_code
+        }
+    } catch (error) {
+        logger.info(
+            `-- HSPRODUCT.ERROR-- error : ${error}`
+        );
+    }
 }
 
+/* Get the HSCODE of all products */
+async function getHSProduct(data, totalPrice) {
+    let productList = [];
+    let dutyCalculation = {
+        lang: "fr",
+        from_country: data.pickupLocationCountry,
+        to_country: data.dropoffLocationCountry,
+        to_district: null,
+        products: [],
+        shipment_type: "GLOBAL",
+        global_ship_price: totalPrice,
+        currency_global_ship_price: "XOF",
+        transport: {
+            type: "CARRIER",
+            id: "71"
+        },
+        sender: {
+            pro: false,
+            revenue_country_annual: "",
+            currency_revenue_country_annual: ""
+        },
+        receiver: {
+            "pro": false,
+            "activity_id": ""
+        }
+    }
+    try {
+        logger.info(`-- HSPRODUCT.CALCULATION-- start function`);
+        for (let i = 0; i < data.items.length; i++) {
+            let shipmentInfos = {
+                product: {
+                    identification: {
+                        value: data.items[i].label,
+                        type: "TEXT"
+                    }
+                },
+                lang: "fr",
+                from_country: data.pickupLocationCountry,
+                to_country: data.dropoffLocationCountry
+            }
+            await getHSCODE(shipmentInfos).then(async (hscode) => {
+                await productList.push({
+                    identification: {
+                        value: hscode
+                    },
+                    weight: data.items[i].weight,
+                    weight_unit: "kg",
+                    quantity: data.items[i].quantity,
+                    unit_price: data.items[i].price,
+                    currency_unit_price: data.itemsCurrencyCode,
+                    unit_ship_price: null,
+                    unit: null
+                })
+            })
+        }
+        logger.info(`-- HSPRODUCT.CALCULATION-- end function`);
+        dutyCalculation.products = productList
+        return await dutyCalculation
+
+    } catch (error) {
+        logger.info(
+            `-- HSPRODUCT.ERROR-- : ${error.response}`
+        );
+    }
+}
+
+
+
+// Tarif transiteo calculate duty from hscode
+async function getTarif(data, totalPrice) {
+    logger.info(`-- TRANSITEO.CALCULATION-- start function`);
+    let HSProduct = await getHSProduct(data, totalPrice)
+    // request config
+    const config = {
+        method: 'post',
+        url: process.env.TRANSITEO_DUTYCALCULATION_URL,
+        headers: { 'Content-type': 'application/json', Authorization: `Bearer ${transiteoToken}` },
+        data: HSProduct
+    };
+    try {
+        const response = await axios(config)
+        if (response) {
+            return await response.data.global.amount;
+        }
+    } catch (error) {
+        logger.info(
+            `-- TRANSITEO.CALCULATION.ERROR-- error : ${error}`
+        );
+    }
+    logger.info(`-- TRANSITEO.CALCULATION-- end function`);
+}
 
 // create Quotation
 exports.request = async (req, res, next) => {
     logger.info(`-- REQUEST.QUOTE -- start function --`);
+    let tarif = 0;
     try {
         let length = req.body.items.length;
         let totalWeight = 0;
@@ -71,6 +155,7 @@ exports.request = async (req, res, next) => {
             itemsCurrencyCode: req.body.itemsCurrencyCode,
             created_at: new Date()
         };
+        await getTarif(newQuotation, totalPrice).then((value) => { tarif = value })
         const quotation = new Quotation(newQuotation);
         logger.info(`-- REQUEST.QUOTE -- saved`);
         let response = { quoteId: quotation._id, totalItemsWeight: totalWeight, totalItemsPrice: totalPrice, totalshipmentPrice: null, shipmentCurrencyCode: "USD" }
@@ -79,7 +164,7 @@ exports.request = async (req, res, next) => {
             dropoffLocationCountry: newQuotation.dropoffLocationCountry
         }).then(res => {
             shipmentPrice = res.pricePerKilogram * totalWeight
-            response.totalshipmentPrice = shipmentPrice * 1.05
+            response.totalshipmentPrice = shipmentPrice * 1.05 + tarif
         });
         return await quotation.save()
             .then(() => {

@@ -6,7 +6,7 @@ const axios = require('axios');
 /*
     Get auth token from Transiteo
 */
-const authTask = cron.schedule('5 * * * * *', async () => {
+const authTask = cron.schedule('* */45 * * * *', async (req, res, next) => {
     // request body
     const data = qs.stringify({
         client_id: process.env.TRANSITEO_CLIENT_ID,
@@ -22,12 +22,12 @@ const authTask = cron.schedule('5 * * * * *', async () => {
     }
     axios(config)
         .then(result => {
-            console.log("id token =======>", result.data.id_token)
-            //res.send(result.data.id_token)
+            //console.log("id token =======>", result.data.id_token)
+            fs.writeFileSync('./server/scheduler/authToken.JSON', result.data.id_token);
         })
         .catch(err => 
-            console.log(err)
-            //res.status(400).send({ message: 'Transiteo authentification failed'})
+            res.status(400).send({ message: 'Transiteo authentification failed'})
+            //console.log(err)
         )
 });
 
