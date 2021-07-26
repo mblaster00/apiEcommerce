@@ -6,7 +6,7 @@
 
 module.exports = {
 
-    // MongoDB connection options
+    //MongoDB connection options
     // mongo: {
     //     useMongoClient: true,
     //     uri: process.env.MONGODB_URI,

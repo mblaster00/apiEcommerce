@@ -23,11 +23,12 @@ async function validatePassword(plainPassword, hashedPassword) {
 exports.signup = async (req, res, next) => {
     logger.info(`-- USER.SIGNUP --`);
     try {
-        const { email, phone } = req.body;
+        const { username, email, phone, password, country, companyName } = req.body;
         const emailExist = await User.findOne({ email });
-        if (!email && !phone)
-            return res.status(400).json({ message: `Bad Request.` });
-        console.log(req.body)
+        if(!email && !phone)
+            return res.status(400).json({ message: `Email or Phone are required` });
+        if (!username || !password || !country || !companyName)
+            return res.status(400).json({ message: `Please fill in all the required fields` });
         if (emailExist)
             return res.status(409).json({ message: `Email already exist.` });
         if (phone) {
@@ -94,7 +95,7 @@ exports.login = async (req, res, next) => {
             logger.info(`-- USER.APIKEY -- update`);
             const apiKey = await ApiKey.findOne({ userId: user._id }).exec();
             const secret = uuidv4();
-            const secretToken = `${jwtUtils.generateSecret(apiKey)}|${secret}` 
+            const secretToken = `${jwtUtils.generateSecret(apiKey)}|${secret}`
             await ApiKey.findOneAndUpdate({ userId: user._id }, { accessToken: secretToken }).exec()
         }
         return await User.findByIdAndUpdate(user._id, { accessToken: accessToken, lastLogin: lastLogin })
@@ -120,3 +121,18 @@ exports.login = async (req, res, next) => {
         );
     }
 };
+
+// authentification
+exports.getOneUser = async (req, res, next) => {
+    const data = req.params;
+    return await User.findById(data.userId).exec()
+        .then((result) => {
+            logger.info(`-- USER.FINDONE -- SUCCESSFULLY`);
+            res.status(200).json({ result });
+        })
+        .catch((error) => {
+            logger.info(
+                `-- USER.FINDONE-- : ${error.toString()}`
+            );
+        });
+}

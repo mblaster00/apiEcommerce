@@ -48,7 +48,11 @@ module.exports = {
             res.locals.loggedInUser = await User.findById(userId);
             next();
         } else {
-            next();
+            return res
+                    .status(401)
+                    .json({
+                        error: "JWT token is required, please try again",
+                    });
         }
     },
 

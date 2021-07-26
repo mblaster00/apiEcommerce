@@ -3,6 +3,6 @@ const express = require("express");
 const router = express.Router();
 const accessControl = require('../../_helper/authorize');
 
-router.get("/:userId", accessControl.authorize, apiKeyController.getApiKey);
+router.get("/:userId", accessControl.IsLogged, apiKeyController.getApiKey);
 
 module.exports = router;

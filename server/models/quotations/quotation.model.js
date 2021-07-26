@@ -41,6 +41,11 @@ const QuotationSchema = new Schema({
         type: String,
         required: true
     },
+    status: {
+        type: String, 
+        enum: ['Pending', 'Confirm', 'Cancelled'] ,
+        default: "Pending"
+    },
     created_at: Date
 });
 

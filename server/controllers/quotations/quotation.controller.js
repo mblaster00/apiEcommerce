@@ -159,17 +159,20 @@ exports.request = async (req, res, next) => {
         const quotation = new Quotation(newQuotation);
         logger.info(`-- REQUEST.QUOTE -- saved`);
         let response = { quoteId: quotation._id, totalItemsWeight: totalWeight, totalItemsPrice: totalPrice, totalshipmentPrice: null, shipmentCurrencyCode: "USD" }
-        await Pricing.find({
+        await Pricing.findOne({
             pickupLocationCountry: newQuotation.pickupLocationCountry,
             dropoffLocationCountry: newQuotation.dropoffLocationCountry
-        }).then(res => {
-            shipmentPrice = res.pricePerKilogram * totalWeight
-            response.totalshipmentPrice = shipmentPrice * 1.05 + tarif
+        }).then(pricing => {
+            if (pricing) {
+                shipmentPrice = pricing.pricePerKilogram * totalWeight
+                response.totalshipmentPrice = shipmentPrice * 1.05 + tarif
+            }
+            else { logger.info(`-- PRICING -- not found`); }
         });
         return await quotation.save()
-            .then(() => {
+            .then((quote) => {
                 logger.info("-- NEW.QUOTATION --" + `new quotation saved : ${quotation._id}`);
-                return res.status(201).json({ data: response });
+                return res.status(201).json({ body: quote, data: response });
             })
             .catch((error) => {
                 logger.info(
@@ -181,4 +184,29 @@ exports.request = async (req, res, next) => {
             `-- QUOTATION.ERROR-- : ${error.toString()}`
         );
     }
+};
+
+
+// get quotation
+exports.getQuotation = async (req, res, next) => {
+    const data = req.params;
+    return await Quotation.findById(data.id).exec()
+        .then((result) => {
+            logger.info(`-- Quotation.FINDONE -- SUCCESSFULLY`);
+            res.status(200).json({ data: result });
+        })
+        .catch((error) => {
+            logger.info(
+                `-- Quotation.FINDONE-- : ${error.toString()}`
+            );
+            return res.status(404).json({ error: "Reference Id not found" });
+        });
+}
+
+// cancelQuotation
+exports.cancelQuotation = async (req, res, next) => {
+    return await Quotation.findById(req.params.id).exec()
+    .then(errorHandler.handleEntityNotFound(res))
+    .then(errorHandler.removeEntity(res))
+    .catch(error => errorHandler.handleError(res, 500,error));
 };

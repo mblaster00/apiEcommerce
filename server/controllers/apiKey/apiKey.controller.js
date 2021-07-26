@@ -12,7 +12,7 @@ exports.getApiKey = async (req, res, next) => {
         return await ApiKey.findOne({userId: req.params.userId}).exec()
             .then((apikey) => {
                 logger.info("-- GET.ApiKey --" + `id apikey : ${apikey._id}`);
-                return res.status(201).json({ key: apikey.secretToken });
+                return res.status(200).json({ data: apikey });
             })
             .catch((error) => {
                 logger.info(

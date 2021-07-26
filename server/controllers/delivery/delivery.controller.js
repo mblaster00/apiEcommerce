@@ -1,5 +1,6 @@
 // Imports
 var Delivery = require("../../models/delivery/delivery.model");
+var Quotation = require("../../models/quotations/quotation.model");
 var Tracking = require("../../models/tracking/tracking.model");
 var Statu = require("../../models/statu/statu.model");
 var Location = require("../../models/location/location.model");
@@ -57,6 +58,11 @@ exports.request = async (req, res, next) => {
     try {
         logger.info(`-- REQUEST.QUOTE -- saved`);
         let response = { shippingNumber: null, status: null, createdAt: new Date(), trackingNumber: null }
+        const update = {
+            "$set": {
+              "status": "Confirm"
+            }
+        };
         const newDelivery = {
             quoteId: req.params.quoteId,
             pickupContactEmail: req.body.pickupContactEmail,
@@ -70,6 +76,7 @@ exports.request = async (req, res, next) => {
         const delivery = new Delivery(newDelivery);
         return await delivery.save()
             .then(async (delivery) => {
+                await Quotation.findOneAndUpdate({_id: req.params.quoteId}, update).exec()
                 logger.info("-- NEW.DELIVERY --" + `new delivery saved : ${delivery._id}`);
                 let data = await delivery.populate("quoteId").execPopulate()
                 await createTracking(data).then((tracking) => {
@@ -103,6 +110,7 @@ exports.getDelivery = async (req, res, next) => {
                 logger.info(
                     `-- DELIVERY.ERROR-- error : ${error}`
                 );
+                return res.status(404).json({ error: "Reference Id not found" });
             });
     } catch (error) {
         logger.info(
@@ -112,25 +120,27 @@ exports.getDelivery = async (req, res, next) => {
 };
 
 
-// calcelDelivery
+// cancelDelivery
 exports.cancelDelivery = async (req, res, next) => {
-    logger.info(`-- REQUEST.QUOTE -- start function --`);
-    try {
-        logger.info(`-- REQUEST.QUOTE -- saved`);
-        let response = { shippingNumber: null, status: null, createdAt: new Date() }
-        return await Delivery.findByIdAndRemove(req.params.id).exec()
-            .then(() => {
-                logger.info("-- DELETE.DELIVERY --" + `delivery successfully deleted`);
-                return res.status(201).json({ data: response });
-            })
-            .catch((error) => {
-                logger.info(
-                    `-- DELIVERY.ERROR-- error : ${error}`
-                );
-            });
-    } catch (error) {
-        logger.info(
-            `-- DELIVERY.ERROR-- : ${error.toString()}`
-        );
-    }
+    return await Delivery.findById(req.params.id).exec()
+        .then(errorHandler.handleEntityNotFound(res))
+        .then(errorHandler.removeEntity(res))
+        .catch(error => errorHandler.handleError(res, 500, error));
 };
+
+
+// AllDelivery
+exports.getAllDelivery = async (req, res, next) => {
+    const data = req.params;
+    return await Delivery.find().exec()
+        .then((result) => {
+            logger.info(`-- Delivery.FIND -- SUCCESSFULLY`);
+            res.status(200).json({ data: result });
+        })
+        .catch((error) => {
+            logger.info(
+                `-- Delivery.FIND-- : ${error.toString()}`
+            );
+            return res.status(404).json({ error: "Reference not found" });
+        });
+}
