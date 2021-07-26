@@ -56,6 +56,43 @@ module.exports = {
         }
     },
 
+    //get UserId
+    getIdUser: async function getId(req, res, next) {
+        // roles param can be a single role string (e.g. Role.User or 'User')
+        // or an array of roles (e.g. [Role.Admin, Role.User] or ['Admin', 'User'])
+        let verifytoken = {
+            userId: null,
+            exp: null,
+        };
+        if (req.headers["secret-token"]) {
+            var secret = req.headers["secret-token"]
+            const accessToken = secret.split("&")[1];
+            const verifyOptions = {
+                algorithms: [process.env.ALG],
+            };
+            var publicKey = fs.readFileSync(process.env.PUBLIC_KEY, "utf-8");
+            // verify a token symmetric
+            const { userId, exp } = await jwt.decode(
+                accessToken,
+                publicKey,
+                verifyOptions,
+                (err, decode) => {
+                    if (err) {
+                        return verifytoken;
+                    } else {
+                        // success token
+                        return {
+                            userId: decode.userId,
+                            exp: decode.exp,
+                        };
+                    }
+                }
+            );
+            // get Id user
+            return userId
+        }
+    },
+
 
     // authorize user 
     authorize: async function authorize(req, res, next) {

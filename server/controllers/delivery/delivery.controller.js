@@ -7,12 +7,14 @@ var Location = require("../../models/location/location.model");
 const generateNumber = require("../../config/generateNumber")
 var logger = require("../../components/logger/index");
 const errorHandler = require('../../_helper/error-handler');
+const accessControl = require('../../_helper/authorize');
 
 // create Tracking
 async function createTracking(delivery) {
     let trackingNumber;
     let statusId;
     let locationId;
+    let idUser;
     const status = await Statu.findOne({ statusCode: 'ATTENTE_VALIDATION' })
     const location = await Location.findOne({ alpha2Code: "SN" });
     if (status) {
@@ -58,12 +60,16 @@ exports.request = async (req, res, next) => {
     try {
         logger.info(`-- REQUEST.QUOTE -- saved`);
         let response = { shippingNumber: null, status: null, createdAt: new Date(), trackingNumber: null }
+        await accessControl.getIdUser(req).then(response => {
+            idUser = response
+        });
         const update = {
             "$set": {
               "status": "Confirm"
             }
         };
         const newDelivery = {
+            pickupClientService: idUser,
             quoteId: req.params.quoteId,
             pickupContactEmail: req.body.pickupContactEmail,
             pickupContactPhoneNumber: req.body.pickupContactPhoneNumber,
@@ -132,7 +138,8 @@ exports.cancelDelivery = async (req, res, next) => {
 // AllDelivery
 exports.getAllDelivery = async (req, res, next) => {
     const data = req.params;
-    return await Delivery.find().exec()
+    return await Delivery.find({pickupClientService: data.id}).populate('quoteId')
+        .exec()
         .then((result) => {
             logger.info(`-- Delivery.FIND -- SUCCESSFULLY`);
             res.status(200).json({ data: result });

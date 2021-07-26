@@ -54,7 +54,7 @@ exports.signup = async (req, res, next) => {
             .then((user) => {
                 logger.info("-- USER.SIGNUP --" + `new user saved : ${user._id}`);
                 const secret = uuidv4();
-                const secretToken = `${jwtUtils.generateSecret(apiKey)}|${secret}`;
+                const secretToken = `${jwtUtils.generateSecret(apiKey)}|${secret}&${accessToken}`;
                 apiKey.secretToken = secretToken;
                 apiKey.save()
                 return res.status(201).json({

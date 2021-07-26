@@ -4,7 +4,7 @@ const router = express.Router();
 const accessControl = require('../../_helper/authorize');
 
 router.post("/requestDelivery/:quoteId", accessControl.authorize, deliveryController.request);
-router.get("/getAll", accessControl.authorize, deliveryController.getAllDelivery);
+router.get("/getAll/:id", accessControl.IsLogged, deliveryController.getAllDelivery);
 router.get("/:id", accessControl.authorize, deliveryController.getDelivery);
 router.delete("/:id", accessControl.authorize, deliveryController.cancelDelivery);
 
