@@ -136,3 +136,19 @@ exports.getOneUser = async (req, res, next) => {
             );
         });
 }
+
+
+// upserts Password
+exports.upsertPassword = async (req, res, next) => {
+    if(req.body._id) {
+        Reflect.deleteProperty(req.body, '_id');
+    }
+    const user = await User.findById(req.params.id).exec();
+    const validPassword = await validatePassword(req.body.oldpassword, user.password);
+    if (!validPassword) return res.status(403).json({ message: "Password is not correct" });
+    const hashedPassword = await hashPassword(req.body.password);
+    const update = { "$set": { "password": hashedPassword }};
+    return await User.findOneAndUpdate({_id: req.params.id}, update, {new: true, upsert: true}).exec()
+        .then(errorHandler.respondWithResult(res))
+        .catch(error => errorHandler.handleError(res, 500, error));
+}

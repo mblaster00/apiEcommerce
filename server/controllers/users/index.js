@@ -6,5 +6,6 @@ const accessControl = require('../../_helper/authorize');
 router.post("/register", userController.signup);
 router.post("/login", userController.login);
 router.get("/:userId", userController.getOneUser);
+router.put("/:id", accessControl.IsLogged, userController.upsertPassword);
 
 module.exports = router;
