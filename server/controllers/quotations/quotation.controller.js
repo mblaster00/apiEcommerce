@@ -210,3 +210,13 @@ exports.cancelQuotation = async (req, res, next) => {
     .then(errorHandler.removeEntity(res))
     .catch(error => errorHandler.handleError(res, 500,error));
 };
+
+// Upserts Quotation
+exports.upsertQuotation = async (req, res, next) => {
+    if(req.body._id) {
+        Reflect.deleteProperty(req.body, '_id');
+    }
+    return await Quotation.findOneAndUpdate({_id: req.params.id}, req.body, {new: true, upsert: true}).exec()
+        .then(errorHandler.respondWithResult(res))
+        .catch(error => errorHandler.handleError(res, 500, error));
+}

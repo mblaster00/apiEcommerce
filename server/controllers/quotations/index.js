@@ -5,6 +5,7 @@ const accessControl = require('../../_helper/authorize');
 
 router.post("/requestQuote", accessControl.authorize, quotationController.request);
 router.get("/:id", accessControl.authorize, quotationController.getQuotation);
+router.put("/:id", accessControl.authorize, quotationController.upsertQuotation);
 router.delete("/:id", accessControl.authorize, quotationController.cancelQuotation);
 
 module.exports = router;

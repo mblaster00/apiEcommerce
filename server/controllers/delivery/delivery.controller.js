@@ -151,3 +151,13 @@ exports.getAllDelivery = async (req, res, next) => {
             return res.status(404).json({ error: "Reference not found" });
         });
 }
+
+// Upserts Delivery
+exports.upsertDelivery = async (req, res, next) => {
+    if(req.body._id) {
+        Reflect.deleteProperty(req.body, '_id');
+    }
+    return await Delivery.findOneAndUpdate({_id: req.params.id}, req.body, {new: true, upsert: true}).exec()
+        .then(errorHandler.respondWithResult(res))
+        .catch(error => errorHandler.handleError(res, 500, error));
+}
