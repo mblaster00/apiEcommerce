@@ -116,7 +116,7 @@ exports.getDelivery = async (req, res, next) => {
                 logger.info(
                     `-- DELIVERY.ERROR-- error : ${error}`
                 );
-                return res.status(404).json({ error: "Reference Id not found" });
+                return res.status(404).json({ message: "Reference Id not found" });
             });
     } catch (error) {
         logger.info(
@@ -148,7 +148,7 @@ exports.getAllDelivery = async (req, res, next) => {
             logger.info(
                 `-- Delivery.FIND-- : ${error.toString()}`
             );
-            return res.status(404).json({ error: "Reference not found" });
+            return res.status(404).json({ message: "Reference not found" });
         });
 }
 

@@ -199,7 +199,7 @@ exports.getQuotation = async (req, res, next) => {
             logger.info(
                 `-- Quotation.FINDONE-- : ${error.toString()}`
             );
-            return res.status(404).json({ error: "Reference Id not found" });
+            return res.status(404).json({ message: "Reference Id not found" });
         });
 }
 

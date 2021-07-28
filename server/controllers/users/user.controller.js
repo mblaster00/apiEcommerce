@@ -128,7 +128,7 @@ exports.getOneUser = async (req, res, next) => {
     return await User.findById(data.userId).exec()
         .then((result) => {
             logger.info(`-- USER.FINDONE -- SUCCESSFULLY`);
-            res.status(200).json({ result });
+            res.status(200).json({ data: result });
         })
         .catch((error) => {
             logger.info(
