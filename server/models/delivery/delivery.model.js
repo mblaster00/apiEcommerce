@@ -3,14 +3,14 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const DeliverySchema = new Schema({
-    pickupClientService: {
-        type: mongoose.Schema.ObjectId,
-        ref: 'Users',
-        required: true
-    },
     quoteId: {
         type: mongoose.Schema.ObjectId,
         ref: 'Quotation',
+        required: true
+    },
+    pickupClientService: {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User',
         required: true
     },
     pickupContactEmail: {

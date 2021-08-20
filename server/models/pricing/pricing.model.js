@@ -3,14 +3,8 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const PricingSchema = new Schema({
-    pickupLocationCountry: {
-        type: String,
-        required: true
-    },
-    dropoffLocationCountry: {
-        type: String,
-        required: true
-    },
+    pickupLocationCountry: [String],
+    dropoffLocationCountry: [String],
     pricePerKilogram: {
         type: Number,
         required: true
@@ -19,9 +13,12 @@ const PricingSchema = new Schema({
         type: Number,
         required: true
     },
+    currency: {
+        type: String,
+        required: true
+    },
     created_at: Date
 });
 
 const Pricing = mongoose.model("Pricing", PricingSchema);
-
 module.exports = Pricing;

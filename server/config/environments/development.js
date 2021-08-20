@@ -7,27 +7,27 @@
 module.exports = {
 
     //MongoDB connection options
-    // mongo: {
-    //     useMongoClient: true,
-    //     uri: process.env.MONGODB_URI,
-    //     options: {
-    //         auth: {
-    //             authSource: process.env.MONGODB_AUTH_SOURCE
-    //         },
-    //         user: process.env.MONGODB_USER,
-    //         pass: process.env.MONGODB_PASSWORD,
-    //     }
-    // },
-
     mongo: {
+        useMongoClient: true,
         uri: process.env.MONGODB_URI,
         options: {
-          useNewUrlParser: true,
-          useFindAndModify: false,
-          useUnifiedTopology: true,
-          useCreateIndex: true,
+            auth: {
+                authSource: process.env.MONGODB_AUTH_SOURCE
+            },
+            user: process.env.MONGODB_USER,
+            pass: process.env.MONGODB_PASSWORD,
         }
-       },
+    },
+
+    // mongo: {
+    //     uri: process.env.MONGODB_URI,
+    //     options: {
+    //       useNewUrlParser: true,
+    //       useFindAndModify: false,
+    //       useUnifiedTopology: true,
+    //       useCreateIndex: true,
+    //     }
+    //    },
 
     //expiration date of token
     time: {

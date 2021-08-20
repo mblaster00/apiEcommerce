@@ -59,6 +59,7 @@ exports.request = async (req, res, next) => {
     logger.info(`-- REQUEST.QUOTE -- start function --`);
     try {
         logger.info(`-- REQUEST.QUOTE -- saved`);
+        let idUser = null;
         let response = { shippingNumber: null, status: null, createdAt: new Date(), trackingNumber: null }
         await accessControl.getIdUser(req).then(response => {
             idUser = response
@@ -69,7 +70,7 @@ exports.request = async (req, res, next) => {
             }
         };
         const newDelivery = {
-            pickupClientService: idUser,
+            serviceProvider: idUser,
             quoteId: req.params.quoteId,
             pickupContactEmail: req.body.pickupContactEmail,
             pickupContactPhoneNumber: req.body.pickupContactPhoneNumber,
@@ -138,7 +139,7 @@ exports.cancelDelivery = async (req, res, next) => {
 // AllDelivery
 exports.getAllDelivery = async (req, res, next) => {
     const data = req.params;
-    return await Delivery.find({pickupClientService: data.id}).populate('quoteId')
+    return await Delivery.find({serviceProvider: data.id}).populate('quoteId')
         .exec()
         .then((result) => {
             logger.info(`-- Delivery.FIND -- SUCCESSFULLY`);

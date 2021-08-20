@@ -7,6 +7,7 @@ const errorHandler = require('../../_helper/error-handler');
 const axios = require('axios');
 const fs = require('fs');
 const transiteoToken = fs.readFileSync('./server/scheduler/authToken.JSON', "utf-8");
+const accessControl = require('../../_helper/authorize');
 
 /* Generate PRODUCT HSCODE */
 async function getHSCODE(shipmentInfos) {
@@ -72,16 +73,17 @@ async function getHSProduct(data, totalPrice) {
                 to_country: data.dropoffLocationCountry
             }
             await getHSCODE(shipmentInfos).then(async (hscode) => {
+                console.log('type hscode product ===>', typeof(hscode))
                 await productList.push({
                     identification: {
-                        value: hscode
+                        value: hscode.toString()
                     },
                     weight: data.items[i].weight,
                     weight_unit: "kg",
                     quantity: data.items[i].quantity,
                     unit_price: data.items[i].price,
                     currency_unit_price: data.itemsCurrencyCode,
-                    unit_ship_price: null,
+                    unit_ship_price: 1000,
                     unit: null
                 })
             })
@@ -103,6 +105,7 @@ async function getHSProduct(data, totalPrice) {
 async function getTarif(data, totalPrice) {
     logger.info(`-- TRANSITEO.CALCULATION-- start function`);
     let HSProduct = await getHSProduct(data, totalPrice)
+    console.log('HSProduct ====>', HSProduct)
     // request config
     const config = {
         method: 'post',
@@ -131,6 +134,8 @@ exports.request = async (req, res, next) => {
         let length = req.body.items.length;
         let totalWeight = 0;
         let totalPrice = 0;
+        let shipmentPrice = 0;
+        let idUser = null;
         logger.info(`-- ITEM.CREATION-- start function`);
         try {
             if (length > 0)
@@ -142,7 +147,11 @@ exports.request = async (req, res, next) => {
         } catch (error) {
             logger.info(`-- ITEM.ERROR-- : ${error.toString()}`);
         }
+        await accessControl.getIdUser(req).then(response => {
+            idUser = response
+        });
         let newQuotation = {
+            serviceProvider: idUser,
             pickupLocationState: req.body.pickupLocationState,
             pickupLocationCountry: req.body.pickupLocationCountry,
             pickupLocationAddress: req.body.pickupLocationAddress,
@@ -165,10 +174,13 @@ exports.request = async (req, res, next) => {
         }).then(pricing => {
             if (pricing) {
                 shipmentPrice = pricing.pricePerKilogram * totalWeight
-                response.totalshipmentPrice = shipmentPrice * 1.05 + tarif
+                if (tarif) 
+                    response.totalshipmentPrice = shipmentPrice * 1.05 + tarif
+                else { logger.info(`-- TARIF - TRANSITEO -- not found`); }
             }
             else { logger.info(`-- PRICING -- not found`); }
         });
+        console.log("totalshipment price ===>", response.totalshipmentPrice)
         return await quotation.save()
             .then((quote) => {
                 logger.info("-- NEW.QUOTATION --" + `new quotation saved : ${quotation._id}`);
@@ -203,20 +215,49 @@ exports.getQuotation = async (req, res, next) => {
         });
 }
 
+// filter quotation
+exports.filterQuotation = async (req, res, next) => {
+    const data = req.params;
+    let query = {}
+    let limit;
+    if (data.startDate)
+        query.created_at = { $gte: data.startDate }
+    if (data.endDate)
+        query.created_at = { $lt: data.endDate }
+    if (data.status)
+        query.status = data.status
+    if (data.limit)
+        limit = data.limit
+    await accessControl.getIdUser(req).then(response => {
+        query.serviceProvider = response
+    });
+    return await Quotation.find(query).limit(limit).exec()
+        .then((result) => {
+            logger.info(`-- Quotation.FILTER -- SUCCESSFULLY`);
+            res.status(200).json({ data: result });
+        })
+        .catch((error) => {
+            logger.info(
+                `-- Quotation.FILTER-- : ${error.toString()}`
+            );
+            return res.status(404).json({ message: "Reference Id not found" });
+        });
+}
+
 // cancelQuotation
 exports.cancelQuotation = async (req, res, next) => {
     return await Quotation.findById(req.params.id).exec()
-    .then(errorHandler.handleEntityNotFound(res))
-    .then(errorHandler.removeEntity(res))
-    .catch(error => errorHandler.handleError(res, 500,error));
+        .then(errorHandler.handleEntityNotFound(res))
+        .then(errorHandler.removeEntity(res))
+        .catch(error => errorHandler.handleError(res, 500, error));
 };
 
 // Upserts Quotation
 exports.upsertQuotation = async (req, res, next) => {
-    if(req.body._id) {
+    if (req.body._id) {
         Reflect.deleteProperty(req.body, '_id');
     }
-    return await Quotation.findOneAndUpdate({_id: req.params.id}, req.body, {new: true, upsert: true}).exec()
+    return await Quotation.findOneAndUpdate({ _id: req.params.id }, req.body, { new: true, upsert: true }).exec()
         .then(errorHandler.respondWithResult(res))
         .catch(error => errorHandler.handleError(res, 500, error));
 }

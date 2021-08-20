@@ -3,6 +3,11 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const QuotationSchema = new Schema({
+    serviceProvider: {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User',
+        //required: true
+    },
     pickupLocationState: {
         type: String
     },
