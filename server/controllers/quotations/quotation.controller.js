@@ -73,17 +73,16 @@ async function getHSProduct(data, totalPrice) {
                 to_country: data.dropoffLocationCountry
             }
             await getHSCODE(shipmentInfos).then(async (hscode) => {
-                console.log('type hscode product ===>', typeof(hscode))
                 await productList.push({
                     identification: {
-                        value: hscode.toString()
+                        value: hscode
                     },
                     weight: data.items[i].weight,
                     weight_unit: "kg",
                     quantity: data.items[i].quantity,
                     unit_price: data.items[i].price,
                     currency_unit_price: data.itemsCurrencyCode,
-                    unit_ship_price: 1000,
+                    unit_ship_price: null,
                     unit: null
                 })
             })
@@ -105,7 +104,6 @@ async function getHSProduct(data, totalPrice) {
 async function getTarif(data, totalPrice) {
     logger.info(`-- TRANSITEO.CALCULATION-- start function`);
     let HSProduct = await getHSProduct(data, totalPrice)
-    console.log('HSProduct ====>', HSProduct)
     // request config
     const config = {
         method: 'post',
@@ -174,13 +172,12 @@ exports.request = async (req, res, next) => {
         }).then(pricing => {
             if (pricing) {
                 shipmentPrice = pricing.pricePerKilogram * totalWeight
-                if (tarif) 
+                if (tarif)
                     response.totalshipmentPrice = shipmentPrice * 1.05 + tarif
                 else { logger.info(`-- TARIF - TRANSITEO -- not found`); }
             }
             else { logger.info(`-- PRICING -- not found`); }
         });
-        console.log("totalshipment price ===>", response.totalshipmentPrice)
         return await quotation.save()
             .then((quote) => {
                 logger.info("-- NEW.QUOTATION --" + `new quotation saved : ${quotation._id}`);
@@ -219,19 +216,28 @@ exports.getQuotation = async (req, res, next) => {
 exports.filterQuotation = async (req, res, next) => {
     const data = req.params;
     let query = {}
-    let limit;
-    if (data.startDate)
-        query.created_at = { $gte: data.startDate }
-    if (data.endDate)
+    let comparor = 'undefined';
+    let count;
+    if (data.startDate != comparor) {
+        if (data.endDate != comparor) {
+            query.created_at = { $gte: data.startDate, $lt: data.endDate }
+        }
+        else {
+            query.created_at = { $gte: data.startDate }
+        }   
+    }
+    if (data.endDate != comparor) {
         query.created_at = { $lt: data.endDate }
-    if (data.status)
+    }
+    if (data.limit != comparor)
+        count = parseInt(data.limit)
+    if (data.status != comparor){
         query.status = data.status
-    if (data.limit)
-        limit = data.limit
+    }
     await accessControl.getIdUser(req).then(response => {
         query.serviceProvider = response
     });
-    return await Quotation.find(query).limit(limit).exec()
+    return await Quotation.find(query).sort({'created_at': -1}).limit(count).exec()
         .then((result) => {
             logger.info(`-- Quotation.FILTER -- SUCCESSFULLY`);
             res.status(200).json({ data: result });

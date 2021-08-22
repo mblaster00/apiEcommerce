@@ -6,7 +6,7 @@ const QuotationSchema = new Schema({
     serviceProvider: {
         type: mongoose.Schema.ObjectId,
         ref: 'User',
-        //required: true
+        required: true
     },
     pickupLocationState: {
         type: String
@@ -48,8 +48,8 @@ const QuotationSchema = new Schema({
     },
     status: {
         type: String, 
-        enum: ['Pending', 'Confirm', 'Cancelled'] ,
-        default: "Pending"
+        enum: ['pending', 'confirmed', 'cancelled'] ,
+        default: "pending"
     },
     created_at: Date
 });

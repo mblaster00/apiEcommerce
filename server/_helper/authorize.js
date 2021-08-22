@@ -137,7 +137,11 @@ module.exports = {
             }
             next();
         } else {
-            next();
+            return res
+                    .status(401)
+                    .json({
+                        error: "JWT secret is required, please try again",
+                    });
         }
     },
 
