@@ -124,9 +124,8 @@ async function getTarif(data, totalPrice) {
 // create Quotation
 exports.request = async (req, res, next) => {
     logger.info(`-- REQUEST.QUOTE -- start function --`);
-    let tarif = 0;
     try {
-        let length = req.body.items.length;
+        let tarif = 0;
         let totalWeight = 0;
         let totalPrice = 0;
         let shipmentPrice = 0;
@@ -136,6 +135,7 @@ exports.request = async (req, res, next) => {
         if (!request.pickupLocationCountry || !request.dropoffLocationCountry || !request.items || !request.itemsCurrencyCode)
             return res.status(400).json({ message: `Request does not follow the specification. Please fill in all the required fields` });
         try {
+            let length = req.body.items.length;
             if (length > 0)
                 for (var i = 0; i < length; i++) {
                     let item = req.body.items[i];

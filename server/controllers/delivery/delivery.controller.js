@@ -14,7 +14,6 @@ async function createTracking(delivery) {
     let trackingNumber;
     let statusId;
     let locationId;
-    let idUser;
     const status = await Statu.findOne({ statusCode: 'ATTENTE_VALIDATION' })
     const location = await Location.findOne({ alpha2Code: "SN" });
     if (status) {
@@ -66,6 +65,8 @@ exports.request = async (req, res, next) => {
             idUser = response
         });
         logger.info(`-- ITEM.CREATION-- start function`);
+        if (req.params.quoteId)
+            return res.status(400).json({ message: `Id of the quotation missing.` });
         if ((!request.pickupContactEmail && !request.pickupContactPhoneNumber) || (!request.dropoffContactEmail && !request.dropoffContactPhoneNumber))
             return res.status(400).json({ message: `Email or Phone number of the received and the delivery are required.` });
         if (!request.dropoffContactFullName)
@@ -89,7 +90,12 @@ exports.request = async (req, res, next) => {
         const delivery = new Delivery(newDelivery);
         return await delivery.save()
             .then(async (delivery) => {
-                await Quotation.findOneAndUpdate({_id: req.params.quoteId}, update).exec()
+                await Quotation.findOneAndUpdate({_id: req.params.quoteId}, update)
+                .exec()
+                .catch((error) => {
+                    logger.info(`-- QUOTATION.ERROR-- : ${error.toString()}`);
+                    return res.status(404).json({ message: "Reference Id not found. Requested resource does not exist." });
+                });
                 logger.info("-- NEW.DELIVERY --" + `new delivery saved : ${delivery._id}`);
                 let data = await delivery.populate("quoteId").execPopulate()
                 await createTracking(data).then((tracking) => {
