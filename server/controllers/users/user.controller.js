@@ -63,14 +63,12 @@ exports.signup = async (req, res, next) => {
                 });
             })
             .catch((error) => {
-                logger.info(
-                    `-- USER.SIGNUP-- error : ${error}`
-                );
+                logger.info(`-- USER.SIGNUP-- error : ${error}`);
+                return res.status(500).json({ message: "Internal Server Error" });
             });
     } catch (error) {
-        logger.info(
-            `-- USER.SIGNUP-- : ${error}`
-        );
+        logger.info(`-- USER.SIGNUP-- : ${error}`);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 };
 
@@ -111,14 +109,12 @@ exports.login = async (req, res, next) => {
                 });
             })
             .catch((error) => {
-                logger.info(
-                    `-- USER.LOGIN-- : ${error.toString()}`
-                );
+                logger.info(`-- USER.LOGIN-- : ${error.toString()}`);
+                return res.status(500).json({ message: "Internal Server Error" });
             });
     } catch (error) {
-        logger.info(
-            `-- USER.LOGIN-- : ${error.toString()}`
-        );
+        logger.info(`-- USER.LOGIN-- : ${error.toString()}`);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 };
 
@@ -131,9 +127,8 @@ exports.getOneUser = async (req, res, next) => {
             res.status(200).json({ data: result });
         })
         .catch((error) => {
-            logger.info(
-                `-- USER.FINDONE-- : ${error.toString()}`
-            );
+            logger.info(`-- USER.FINDONE-- : ${error.toString()}`);
+            return res.status(500).json({ message: "Internal Server Error" });
         });
 }
 

@@ -26,9 +26,8 @@ async function getHSCODE(shipmentInfos) {
             return await response.data.result.hs_code
         }
     } catch (error) {
-        logger.info(
-            `-- HSPRODUCT.ERROR-- error : ${error}`
-        );
+        logger.info(`-- HSPRODUCT.ERROR-- error : ${error}`);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 }
 
@@ -92,9 +91,8 @@ async function getHSProduct(data, totalPrice) {
         return await dutyCalculation
 
     } catch (error) {
-        logger.info(
-            `-- HSPRODUCT.ERROR-- : ${error.response}`
-        );
+        logger.info(`-- HSPRODUCT.ERROR-- : ${error.response}`);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 }
 
@@ -117,9 +115,8 @@ async function getTarif(data, totalPrice) {
             return await response.data.global.amount;
         }
     } catch (error) {
-        logger.info(
-            `-- TRANSITEO.CALCULATION.ERROR-- error : ${error}`
-        );
+        logger.info(`-- TRANSITEO.CALCULATION.ERROR-- error : ${error}`);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
     logger.info(`-- TRANSITEO.CALCULATION-- end function`);
 }
@@ -134,7 +131,10 @@ exports.request = async (req, res, next) => {
         let totalPrice = 0;
         let shipmentPrice = 0;
         let idUser = null;
+        let request = req.body
         logger.info(`-- ITEM.CREATION-- start function`);
+        if (!request.pickupLocationCountry || !request.dropoffLocationCountry || !request.items || !request.itemsCurrencyCode)
+            return res.status(400).json({ message: `Request does not follow the specification. Please fill in all the required fields` });
         try {
             if (length > 0)
                 for (var i = 0; i < length; i++) {
@@ -184,14 +184,12 @@ exports.request = async (req, res, next) => {
                 return res.status(201).json({ body: quote, data: response });
             })
             .catch((error) => {
-                logger.info(
-                    `-- QUOTATION.ERROR-- error : ${error}`
-                );
+                logger.info( `-- QUOTATION.ERROR-- error : ${error}`);
+                return res.status(500).json({ message: "Internal Server Error" });
             });
     } catch (error) {
-        logger.info(
-            `-- QUOTATION.ERROR-- : ${error.toString()}`
-        );
+        logger.info(`-- QUOTATION.ERROR-- : ${error.toString()}`);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 };
 
@@ -205,9 +203,7 @@ exports.getQuotation = async (req, res, next) => {
             res.status(200).json({ data: result });
         })
         .catch((error) => {
-            logger.info(
-                `-- Quotation.FINDONE-- : ${error.toString()}`
-            );
+            logger.info(`-- Quotation.FINDONE-- : ${error.toString()}`);
             return res.status(404).json({ message: "Reference Id not found" });
         });
 }
@@ -243,9 +239,7 @@ exports.filterQuotation = async (req, res, next) => {
             res.status(200).json({ data: result });
         })
         .catch((error) => {
-            logger.info(
-                `-- Quotation.FILTER-- : ${error.toString()}`
-            );
+            logger.info(`-- Quotation.FILTER-- : ${error.toString()}`);
             return res.status(404).json({ message: "Reference Id not found" });
         });
 }

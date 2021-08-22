@@ -41,18 +41,12 @@ module.exports = {
             if (exp < Date.now().valueOf() / 1000 || exp == null) {
                 return res
                     .status(401)
-                    .json({
-                        error: "JWT token has expired, please login again",
-                    });
+                    .json({ message: "JWT token has expired, please login again" });
             }
             res.locals.loggedInUser = await User.findById(userId);
             next();
         } else {
-            return res
-                    .status(401)
-                    .json({
-                        error: "JWT token is required, please try again",
-                    });
+            return res.status(401).json({ message: "JWT token is required, please try again" });
         }
     },
 
@@ -64,32 +58,36 @@ module.exports = {
             userId: null,
             exp: null,
         };
-        if (req.headers["secret-token"]) {
-            var secret = req.headers["secret-token"]
-            const accessToken = secret.split("&")[1];
-            const verifyOptions = {
-                algorithms: [process.env.ALG],
-            };
-            var publicKey = fs.readFileSync(process.env.PUBLIC_KEY, "utf-8");
-            // verify a token symmetric
-            const { userId, exp } = await jwt.decode(
-                accessToken,
-                publicKey,
-                verifyOptions,
-                (err, decode) => {
-                    if (err) {
-                        return verifytoken;
-                    } else {
-                        // success token
-                        return {
-                            userId: decode.userId,
-                            exp: decode.exp,
-                        };
+        try {
+            if (req.headers["secret-token"]) {
+                var secret = req.headers["secret-token"]
+                const accessToken = secret.split("&")[1];
+                const verifyOptions = {
+                    algorithms: [process.env.ALG],
+                };
+                var publicKey = fs.readFileSync(process.env.PUBLIC_KEY, "utf-8");
+                // verify a token symmetric
+                const { userId, exp } = await jwt.decode(
+                    accessToken,
+                    publicKey,
+                    verifyOptions,
+                    (err, decode) => {
+                        if (err) {
+                            return verifytoken;
+                        } else {
+                            // success token
+                            return {
+                                userId: decode.userId,
+                                exp: decode.exp,
+                            };
+                        }
                     }
-                }
-            );
-            // get Id user
-            return userId
+                );
+                // get Id user
+                return userId
+            }
+        } catch (error) {
+            return res.status(401).json({ message: "JWT secret is not valid, please try again" });
         }
     },
 
@@ -103,45 +101,44 @@ module.exports = {
             keyId: null,
             exp: null,
         };
-        if (req.headers["secret-token"]) {
-            var secret = req.headers["secret-token"]
-            const secretToken = secret.split("|")[0];
-            const verifyOptions = {
-                algorithms: [process.env.ALG],
-            };
-            var publicKey = fs.readFileSync(process.env.PUBLIC_KEY, "utf-8");
-            // verify a token symmetric
-            const { keyId, exp } = await jwt.decode(
-                secretToken,
-                publicKey,
-                verifyOptions,
-                (err, decode) => {
-                    if (err) {
-                        return verifytoken;
-                    } else {
-                        // success token
-                        return {
-                            keyId: decode.keyId,
-                            exp: decode.exp,
-                        };
+        try {
+            if (req.headers["secret-token"]) {
+                var secret = req.headers["secret-token"]
+                const secretToken = secret.split("|")[0];
+                const verifyOptions = {
+                    algorithms: [process.env.ALG],
+                };
+                var publicKey = fs.readFileSync(process.env.PUBLIC_KEY, "utf-8");
+                // verify a token symmetric
+                const { keyId, exp } = await jwt.decode(
+                    secretToken,
+                    publicKey,
+                    verifyOptions,
+                    (err, decode) => {
+                        if (err) {
+                            return verifytoken;
+                        } else {
+                            // success token
+                            return {
+                                keyId: decode.keyId,
+                                exp: decode.exp,
+                            };
+                        }
                     }
+                );
+                // Check if token has expired
+                if (exp < Date.now().valueOf() / 1000 || exp == null) {
+                    return res.status(401)
+                        .json({
+                            message: "JWT token has expired, It has been a long time that you don't change your api key"
+                        });
                 }
-            );
-            // Check if token has expired
-            if (exp < Date.now().valueOf() / 1000 || exp == null) {
-                return res
-                    .status(401)
-                    .json({
-                        error: "JWT token has expired, It has been a long time that you don't change your api key",
-                    });
+                next();
+            } else {
+                return res.status(401).json({ message: "JWT secret is required, please try again" });
             }
-            next();
-        } else {
-            return res
-                    .status(401)
-                    .json({
-                        error: "JWT secret is required, please try again",
-                    });
+        } catch (error) {
+            return res.status(401).json({ message: "JWT secret is not valid, please try again" });
         }
     },
 
@@ -153,7 +150,7 @@ module.exports = {
             if (!user) {
                 logger.info(`--- You need to be logged in to access this route ---`)
                 return res.status(401).json({
-                    error: "You need to be logged in to access this route",
+                    message: "You need to be logged in to access this route",
                 });
             }
             logger.info(`--- ALLOWIFLOGGEDIN - online ---`)

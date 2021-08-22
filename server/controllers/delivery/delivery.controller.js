@@ -60,13 +60,19 @@ exports.request = async (req, res, next) => {
     try {
         logger.info(`-- REQUEST.QUOTE -- saved`);
         let idUser = null;
+        let request = req.body
         let response = { shippingNumber: null, status: null, createdAt: new Date(), trackingNumber: null }
         await accessControl.getIdUser(req).then(response => {
             idUser = response
         });
+        logger.info(`-- ITEM.CREATION-- start function`);
+        if ((!request.pickupContactEmail && !request.pickupContactPhoneNumber) || (!request.dropoffContactEmail && !request.dropoffContactPhoneNumber))
+            return res.status(400).json({ message: `Email or Phone number of the received and the delivery are required.` });
+        if (!request.dropoffContactFullName)
+            return res.status(400).json({ message: `Request does not follow the specification. Please fill in all the required fields.` });
         const update = {
             "$set": {
-              "status": "Confirm"
+              "status": "confirmed"
             }
         };
         const newDelivery = {
@@ -92,14 +98,12 @@ exports.request = async (req, res, next) => {
                 return res.status(201).json({ data: response });
             })
             .catch((error) => {
-                logger.info(
-                    `-- DELIVERY.ERROR-- error : ${error}`
-                );
+                logger.info( `-- DELIVERY.ERROR-- error : ${error}`);
+                return res.status(500).json({ message: "Internal Server Error" });
             });
     } catch (error) {
-        logger.info(
-            `-- DELIVERY.ERROR-- : ${error.toString()}`
-        );
+        logger.info(`-- DELIVERY.ERROR-- : ${error.toString()}`);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 };
 
@@ -114,15 +118,12 @@ exports.getDelivery = async (req, res, next) => {
                 return res.status(201).json({ data: delivery });
             })
             .catch((error) => {
-                logger.info(
-                    `-- DELIVERY.ERROR-- error : ${error}`
-                );
+                logger.info(`-- DELIVERY.ERROR-- error : ${error}`);
                 return res.status(404).json({ message: "Reference Id not found" });
             });
     } catch (error) {
-        logger.info(
-            `-- DELIVERY.ERROR-- : ${error.toString()}`
-        );
+        logger.info(`-- DELIVERY.ERROR-- : ${error.toString()}`);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 };
 
@@ -154,9 +155,7 @@ exports.filterDelivery = async (req, res, next) => {
             res.status(200).json({ data: result });
         })
         .catch((error) => {
-            logger.info(
-                `-- Delivery.FILTER-- : ${error.toString()}`
-            );
+            logger.info(`-- Delivery.FILTER-- : ${error.toString()}`);
             return res.status(404).json({ message: "Reference Id not found" });
         });
 }
@@ -181,9 +180,7 @@ exports.getAllDelivery = async (req, res, next) => {
             res.status(200).json({ data: result });
         })
         .catch((error) => {
-            logger.info(
-                `-- Delivery.FIND-- : ${error.toString()}`
-            );
+            logger.info( `-- Delivery.FIND-- : ${error.toString()}`);
             return res.status(404).json({ message: "Reference not found" });
         });
 }
