@@ -126,6 +126,41 @@ exports.getDelivery = async (req, res, next) => {
     }
 };
 
+// filter delivery
+exports.filterDelivery = async (req, res, next) => {
+    const data = req.params;
+    let query = {}
+    let comparor = 'undefined';
+    let count;
+    if (data.startDate != comparor) {
+        if (data.endDate != comparor) {
+            query.created_at = { $gte: data.startDate, $lt: data.endDate }
+        }
+        else {
+            query.created_at = { $gte: data.startDate }
+        }   
+    }
+    if (data.endDate != comparor) {
+        query.created_at = { $lt: data.endDate }
+    }
+    if (data.limit != comparor)
+        count = parseInt(data.limit)
+    await accessControl.getIdUser(req).then(response => {
+        query.serviceProvider = response
+    });
+    return await Delivery.find(query).sort({'created_at': -1}).limit(count).exec()
+        .then((result) => {
+            logger.info(`-- Delivery.FILTER -- SUCCESSFULLY`);
+            res.status(200).json({ data: result });
+        })
+        .catch((error) => {
+            logger.info(
+                `-- Delivery.FILTER-- : ${error.toString()}`
+            );
+            return res.status(404).json({ message: "Reference Id not found" });
+        });
+}
+
 
 // cancelDelivery
 exports.cancelDelivery = async (req, res, next) => {
