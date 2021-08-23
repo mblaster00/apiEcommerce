@@ -23,11 +23,11 @@ async function getHSCODE(shipmentInfos) {
     try {
         const response = await axios(config)
         if (response) {
+            logger.info(`-- HSCODE.REQUEST-- end function`);
             return await response.data.result.hs_code
         }
     } catch (error) {
-        logger.info(`-- HSPRODUCT.ERROR-- error : ${error}`);
-        return res.status(500).json({ message: "Internal Server Error" });
+        logger.info(`-- HSCODE.ERROR-- error : ${error}`);
     }
 }
 
@@ -38,11 +38,12 @@ async function getHSProduct(data, totalPrice) {
         lang: "fr",
         from_country: data.pickupLocationCountry,
         to_country: data.dropoffLocationCountry,
-        to_district: null,
+        // from_district: data.pickupLocationAddress,
+        // to_district: data.dropoffLocationAddress,
         products: [],
         shipment_type: "GLOBAL",
         global_ship_price: totalPrice,
-        currency_global_ship_price: "XOF",
+        currency_global_ship_price: "EUR",
         transport: {
             type: "CARRIER",
             id: "71"
@@ -80,9 +81,9 @@ async function getHSProduct(data, totalPrice) {
                     weight_unit: "kg",
                     quantity: data.items[i].quantity,
                     unit_price: data.items[i].price,
-                    currency_unit_price: data.itemsCurrencyCode,
-                    unit_ship_price: null,
-                    unit: null
+                    currency_unit_price: "EUR",
+                    unit_ship_price: 19,
+                    //unit: null
                 })
             })
         }
@@ -91,8 +92,7 @@ async function getHSProduct(data, totalPrice) {
         return await dutyCalculation
 
     } catch (error) {
-        logger.info(`-- HSPRODUCT.ERROR-- : ${error.response}`);
-        return res.status(500).json({ message: "Internal Server Error" });
+        logger.info(`-- HSPRODUCT.ERROR-- : ${error}`);
     }
 }
 
@@ -116,7 +116,6 @@ async function getTarif(data, totalPrice) {
         }
     } catch (error) {
         logger.info(`-- TRANSITEO.CALCULATION.ERROR-- error : ${error}`);
-        return res.status(500).json({ message: "Internal Server Error" });
     }
     logger.info(`-- TRANSITEO.CALCULATION-- end function`);
 }
@@ -162,31 +161,36 @@ exports.request = async (req, res, next) => {
             itemsCurrencyCode: req.body.itemsCurrencyCode,
             created_at: new Date()
         };
-        await getTarif(newQuotation, totalPrice).then((value) => { tarif = value })
+        await getTarif(newQuotation, totalPrice).then((value) => { tarif = value });
         const quotation = new Quotation(newQuotation);
         logger.info(`-- REQUEST.QUOTE -- saved`);
-        let response = { quoteId: quotation._id, totalItemsWeight: totalWeight, totalItemsPrice: totalPrice, totalshipmentPrice: null, shipmentCurrencyCode: "USD" }
+        let response = { quoteId: quotation._id, totalItemsWeight: totalWeight, totalItemsPrice: totalPrice, totalshipmentPrice: null, shipmentCurrencyCode: "XOF" }
         await Pricing.findOne({
             pickupLocationCountry: newQuotation.pickupLocationCountry,
             dropoffLocationCountry: newQuotation.dropoffLocationCountry
         }).then(pricing => {
-            if (pricing) {
+            // if (!pricing) {
+            //     logger.info(`-- PRICING - LOGIDOO -- not found`);
+            //     return res.status(500).json({ message: "Internal Server Error" });
+            // }
+            // else if (!tarif) {
+            //     logger.info(`-- TARIF - TRANSITEO -- not found`);
+            //     return res.status(500).json({ message: "Internal Server Error" });
+            // }
+            // else {
                 shipmentPrice = pricing.pricePerKilogram * totalWeight
-                if (tarif)
-                    response.totalshipmentPrice = shipmentPrice * 1.05 + tarif
-                else { logger.info(`-- TARIF - TRANSITEO -- not found`); }
-            }
-            else { logger.info(`-- PRICING -- not found`); }
+                response.totalshipmentPrice = shipmentPrice * 1.05 + tarif
+                return quotation.save()
+                    .then((quote) => {
+                        logger.info("-- NEW.QUOTATION --" + `new quotation saved : ${quotation._id}`);
+                        return res.status(201).json({ body: quote, data: response });
+                    })
+                    .catch((error) => {
+                        logger.info(`-- QUOTATION.ERROR-- error : ${error}`);
+                        res.status(500).json({ message: "Internal Server Error" });
+                    });
+            //}
         });
-        return await quotation.save()
-            .then((quote) => {
-                logger.info("-- NEW.QUOTATION --" + `new quotation saved : ${quotation._id}`);
-                return res.status(201).json({ body: quote, data: response });
-            })
-            .catch((error) => {
-                logger.info( `-- QUOTATION.ERROR-- error : ${error}`);
-                return res.status(500).json({ message: "Internal Server Error" });
-            });
     } catch (error) {
         logger.info(`-- QUOTATION.ERROR-- : ${error.toString()}`);
         return res.status(500).json({ message: "Internal Server Error" });
@@ -220,20 +224,20 @@ exports.filterQuotation = async (req, res, next) => {
         }
         else {
             query.created_at = { $gte: data.startDate }
-        }   
+        }
     }
     if (data.endDate != comparor) {
         query.created_at = { $lt: data.endDate }
     }
     if (data.limit != comparor)
         count = parseInt(data.limit)
-    if (data.status != comparor){
+    if (data.status != comparor) {
         query.status = data.status
     }
     await accessControl.getIdUser(req).then(response => {
         query.serviceProvider = response
     });
-    return await Quotation.find(query).sort({'created_at': -1}).limit(count).exec()
+    return await Quotation.find(query).sort({ 'created_at': -1 }).limit(count).exec()
         .then((result) => {
             logger.info(`-- Quotation.FILTER -- SUCCESSFULLY`);
             res.status(200).json({ data: result });

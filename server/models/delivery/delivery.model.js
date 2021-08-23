@@ -8,7 +8,7 @@ const DeliverySchema = new Schema({
         ref: 'Quotation',
         required: true
     },
-    pickupClientService: {
+    serviceProvider: {
         type: mongoose.Schema.ObjectId,
         ref: 'User',
         required: true
