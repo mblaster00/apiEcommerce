@@ -55,25 +55,24 @@ async function createTracking(delivery) {
 
 // create Delivery
 exports.request = async (req, res, next) => {
-    logger.info(`-- REQUEST.QUOTE -- start function --`);
     try {
-        logger.info(`-- REQUEST.QUOTE -- saved`);
+        logger.info(`-- REQUEST.DELIVERY -- start function --`);
         let idUser = null;
+        let comparator = 'undefined';
         let request = req.body
         let response = { shippingNumber: null, status: null, createdAt: new Date(), trackingNumber: null }
         await accessControl.getIdUser(req).then(response => {
             idUser = response
         });
-        logger.info(`-- ITEM.CREATION-- start function`);
-        if (req.params.quoteId)
+        if (req.params.quoteId == comparator)
             return res.status(400).json({ message: `Id of the quotation missing.` });
         if ((!request.pickupContactEmail && !request.pickupContactPhoneNumber) || (!request.dropoffContactEmail && !request.dropoffContactPhoneNumber))
-            return res.status(400).json({ message: `Email or Phone number of the received and the delivery are required.` });
+            return res.status(400).json({ message: `Email or Phone number of the receiver and the delivery customer are required.` });
         if (!request.dropoffContactFullName)
             return res.status(400).json({ message: `Request does not follow the specification. Please fill in all the required fields.` });
         const update = {
             "$set": {
-              "status": "confirmed"
+                "status": "confirmed"
             }
         };
         const newDelivery = {
@@ -88,14 +87,11 @@ exports.request = async (req, res, next) => {
             updated_at: new Date()
         };
         const delivery = new Delivery(newDelivery);
-        return await delivery.save()
+        await Quotation.findOneAndUpdate({ _id: req.params.quoteId }, update).exec()
+        .then(async (quote) => {
+            if(!quote) { return res.status(404).json({ message: "Reference Id not found. Requested resource does not exist." }); }
+            return await delivery.save()
             .then(async (delivery) => {
-                await Quotation.findOneAndUpdate({_id: req.params.quoteId}, update)
-                .exec()
-                .catch((error) => {
-                    logger.info(`-- QUOTATION.ERROR-- : ${error.toString()}`);
-                    return res.status(404).json({ message: "Reference Id not found. Requested resource does not exist." });
-                });
                 logger.info("-- NEW.DELIVERY --" + `new delivery saved : ${delivery._id}`);
                 let data = await delivery.populate("quoteId").execPopulate()
                 await createTracking(data).then((tracking) => {
@@ -104,9 +100,14 @@ exports.request = async (req, res, next) => {
                 return res.status(201).json({ data: response });
             })
             .catch((error) => {
-                logger.info( `-- DELIVERY.ERROR-- error : ${error}`);
+                logger.info(`-- DELIVERY.ERROR-- error : ${error}`);
                 return res.status(500).json({ message: "Internal Server Error" });
             });
+        })
+        .catch((error) => {
+            logger.info(`-- DELIVERY.ERROR-- error : ${error}`);
+            return res.status(500).json({ message: "Reference Id not valid. Requested resource does not exist." });
+        });
     } catch (error) {
         logger.info(`-- DELIVERY.ERROR-- : ${error.toString()}`);
         return res.status(500).json({ message: "Internal Server Error" });
@@ -115,9 +116,9 @@ exports.request = async (req, res, next) => {
 
 // getDelivery
 exports.getDelivery = async (req, res, next) => {
-    logger.info(`-- REQUEST.QUOTE -- start function --`);
+    logger.info(`-- REQUEST.DELIVERY -- start function --`);
     try {
-        logger.info(`-- REQUEST.QUOTE -- saved`);
+        logger.info(`-- REQUEST.DELIVERY -- saved`);
         return await Delivery.findById(req.params.id).exec()
             .then((delivery) => {
                 logger.info("-- GET.DELIVERY --" + `id delivery : ${delivery._id}`);
@@ -145,7 +146,7 @@ exports.filterDelivery = async (req, res, next) => {
         }
         else {
             query.created_at = { $gte: data.startDate }
-        }   
+        }
     }
     if (data.endDate != comparor) {
         query.created_at = { $lt: data.endDate }
@@ -155,13 +156,13 @@ exports.filterDelivery = async (req, res, next) => {
     await accessControl.getIdUser(req).then(response => {
         query.serviceProvider = response
     });
-    return await Delivery.find(query).sort({'created_at': -1}).limit(count).exec()
+    return await Delivery.find(query).sort({ 'created_at': -1 }).limit(count).exec()
         .then((result) => {
-            logger.info(`-- Delivery.FILTER -- SUCCESSFULLY`);
+            logger.info(`-- DELIVERY.FILTER -- SUCCESSFULLY`);
             res.status(200).json({ data: result });
         })
         .catch((error) => {
-            logger.info(`-- Delivery.FILTER-- : ${error.toString()}`);
+            logger.info(`-- DELIVERY.FILTER-- : ${error.toString()}`);
             return res.status(404).json({ message: "Reference Id not found" });
         });
 }
@@ -179,24 +180,24 @@ exports.cancelDelivery = async (req, res, next) => {
 // AllDelivery
 exports.getAllDelivery = async (req, res, next) => {
     const data = req.params;
-    return await Delivery.find({serviceProvider: data.id}).populate('quoteId')
+    return await Delivery.find({ serviceProvider: data.id }).populate('quoteId')
         .exec()
         .then((result) => {
-            logger.info(`-- Delivery.FIND -- SUCCESSFULLY`);
+            logger.info(`-- DELIVERY.FIND -- SUCCESSFULLY`);
             res.status(200).json({ data: result });
         })
         .catch((error) => {
-            logger.info( `-- Delivery.FIND-- : ${error.toString()}`);
+            logger.info(`-- DELIVERY.FIND-- : ${error.toString()}`);
             return res.status(404).json({ message: "Reference not found" });
         });
 }
 
 // Upserts Delivery
 exports.upsertDelivery = async (req, res, next) => {
-    if(req.body._id) {
+    if (req.body._id) {
         Reflect.deleteProperty(req.body, '_id');
     }
-    return await Delivery.findOneAndUpdate({_id: req.params.id}, req.body, {new: true, upsert: true}).exec()
+    return await Delivery.findOneAndUpdate({ _id: req.params.id }, req.body, { new: true, upsert: true }).exec()
         .then(errorHandler.respondWithResult(res))
         .catch(error => errorHandler.handleError(res, 500, error));
 }

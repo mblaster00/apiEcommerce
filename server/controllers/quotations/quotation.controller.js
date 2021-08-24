@@ -169,15 +169,15 @@ exports.request = async (req, res, next) => {
             pickupLocationCountry: newQuotation.pickupLocationCountry,
             dropoffLocationCountry: newQuotation.dropoffLocationCountry
         }).then(pricing => {
-            // if (!pricing) {
-            //     logger.info(`-- PRICING - LOGIDOO -- not found`);
-            //     return res.status(500).json({ message: "Internal Server Error" });
-            // }
-            // else if (!tarif) {
-            //     logger.info(`-- TARIF - TRANSITEO -- not found`);
-            //     return res.status(500).json({ message: "Internal Server Error" });
-            // }
-            // else {
+            if (!pricing) {
+                logger.info(`-- PRICING - LOGIDOO -- not found`);
+                return res.status(500).json({ message: "Internal Server Error" });
+            }
+            else if (!tarif) {
+                logger.info(`-- TARIF - TRANSITEO -- not found`);
+                return res.status(500).json({ message: "Internal Server Error" });
+            }
+            else {
                 shipmentPrice = pricing.pricePerKilogram * totalWeight
                 response.totalshipmentPrice = shipmentPrice * 1.05 + tarif
                 return quotation.save()
@@ -189,7 +189,7 @@ exports.request = async (req, res, next) => {
                         logger.info(`-- QUOTATION.ERROR-- error : ${error}`);
                         res.status(500).json({ message: "Internal Server Error" });
                     });
-            //}
+            }
         });
     } catch (error) {
         logger.info(`-- QUOTATION.ERROR-- : ${error.toString()}`);
@@ -216,22 +216,22 @@ exports.getQuotation = async (req, res, next) => {
 exports.filterQuotation = async (req, res, next) => {
     const data = req.params;
     let query = {}
-    let comparor = 'undefined';
+    let comparator = 'undefined';
     let count;
-    if (data.startDate != comparor) {
-        if (data.endDate != comparor) {
+    if (data.startDate != comparator) {
+        if (data.endDate != comparator) {
             query.created_at = { $gte: data.startDate, $lt: data.endDate }
         }
         else {
             query.created_at = { $gte: data.startDate }
         }
     }
-    if (data.endDate != comparor) {
+    if (data.endDate != comparator) {
         query.created_at = { $lt: data.endDate }
     }
-    if (data.limit != comparor)
+    if (data.limit != comparator)
         count = parseInt(data.limit)
-    if (data.status != comparor) {
+    if (data.status != comparator) {
         query.status = data.status
     }
     await accessControl.getIdUser(req).then(response => {
